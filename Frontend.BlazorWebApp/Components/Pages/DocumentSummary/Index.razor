@@ -1,0 +1,95 @@
+﻿@page "/documentsummary/"
+@rendermode InteractiveServer
+
+@using Backend.Shared.Models.DocumentSummary
+@using Frontend.BlazorWebApp.Components.Pages.DocumentSummary.Components
+
+@inject IHttpClientFactory HttpFactory
+
+<div class="container py-5">
+    <h3 class="mb-4 text-center">Dokumentum összefoglaló</h3>
+
+    @if (showUploadModal)
+    {
+        <FileUploadModal SelectedFile="selectedFile"
+                         SelectedFileChanged="f => selectedFile = f"
+                         AvailableStyles="availableStyles"
+                         SelectedStyle="selectedStyle"
+                         SelectedStyleChanged="s => selectedStyle = s"
+                         OnUploadClicked="StartUpload"
+                         OnCancel="() => showUploadModal = false" />
+    }
+    else if (isProcessing)
+    {
+        <ProcessingSpinner />
+    }
+    else if (aiResponse != null)
+    {
+        <DocumentSummaryDisplay Response="aiResponse"
+                                RenderedStyle="renderedStyle"
+                                OnNewUpload="() => showUploadModal = true" />
+    }
+</div>
+
+@code {
+    private bool showUploadModal = true;
+    private bool isProcessing = false;
+    private DocumentSummaryApiResult? aiResponse;
+
+    private readonly string[] availableStyles = { "academic", "practical", "simple" };
+    private string selectedStyle = "academic";
+    private string renderedStyle = "academic";
+
+    private IBrowserFile? selectedFile;
+    private HttpClient? _http;
+
+    protected override void OnInitialized()
+    {
+        _http = HttpFactory.CreateClient("DocumentSummaryClient");
+    }
+
+    private async Task StartUpload()
+    {
+        if (selectedFile == null) return;
+
+        showUploadModal = false;
+        isProcessing = true;
+
+        try
+        {
+            var content = new MultipartFormDataContent 
+            {
+                { 
+                    new StreamContent(selectedFile.OpenReadStream(15 * 1024 * 1024))
+                    { 
+                        Headers = { ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(selectedFile.ContentType) } 
+                    },
+                    "file", 
+                    selectedFile.Name 
+                },
+                { 
+                    new StringContent(selectedStyle), "style" 
+                }
+            };
+
+            var resp = await _http!.PostAsync("upload", content);
+            if (resp.IsSuccessStatusCode)
+            {
+                aiResponse = await resp.Content.ReadFromJsonAsync<DocumentSummaryApiResult>();
+                renderedStyle = selectedStyle;
+            }
+            else
+            {
+                Console.Error.WriteLine("A feltöltés sikertelen volt.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Hiba történt: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+}

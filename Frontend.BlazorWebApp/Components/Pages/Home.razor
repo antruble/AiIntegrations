@@ -1,0 +1,152 @@
+﻿@page "/"
+
+@using Frontend.BlazorWebApp.Components.Layout
+
+@layout SecondaryLayout
+@rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+
+<style>
+    .carousel-container {
+        position: relative;
+        width: 100%;
+        height: 60vh;
+        overflow: hidden;
+        border-top: 3px solid white;
+        border-bottom: 3px solid white;
+    }
+
+    .carousel-wrapper {
+        transition: background-color 0.7s ease-in-out;
+    }
+
+    .carousel-slide {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        transition: opacity 0.7s ease-in-out;
+    }
+
+        .carousel-slide.inactive {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .carousel-slide.active {
+            opacity: 1;
+        }
+
+    .carousel-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 1rem;
+        color: #fff;
+    }
+
+        .carousel-overlay h2 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        }
+
+        .carousel-overlay button {
+            font-size: 1.25rem;
+            padding: 0.75rem 1.5rem;
+        }
+
+    .carousel-controls {
+        position: absolute;
+        bottom: 20px;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 20px;
+        z-index: 10;
+    }
+
+        .carousel-controls button {
+            background: rgba(255,255,255,0.7);
+            border: none;
+            color: #333;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 0.25rem;
+            transition: background 0.3s;
+        }
+
+            .carousel-controls button:hover {
+                background: rgba(255,255,255,0.9);
+            }
+</style>
+
+<div class="d-flex justify-content-center align-items-center carousel-wrapper" style="height: 100vh; background: @BgStyle;">
+    <div class="carousel-container ">
+        @foreach (var i in Enumerable.Range(0, Slides.Count))
+        {
+            var slide = Slides[i];
+            <div class="carousel-slide @(i == ActiveIndex ? "active" : "inactive")"
+                 style="background-image: url('@slide.BackgroundImageUrl')">
+                <div class="carousel-overlay">
+                    <h2>@slide.Title</h2>
+                    <button class="btn btn-primary" @onclick="() => NavigateTo(slide.Url)">
+                        @slide.ButtonText
+                    </button>
+                </div>
+            </div>
+        }
+
+        <div class="carousel-controls">
+            <button @onclick="Prev">&laquo; Előző</button>
+            <button @onclick="Next">Következő &raquo;</button>
+        </div>
+    </div>
+</div>
+@code {
+    private string BgStyle = string.Empty;
+    private int ActiveIndex = 0;
+    private List<Slide> Slides = new()
+    {
+        new Slide("Póker játék", "poker", "Irány a játék", "images/pokerbg.jpg", "linear-gradient(90deg,rgba(25, 135, 84, 1) 0%, rgba(20, 108, 67, 1) 48%, rgba(10, 54, 34, 1) 100%)"),
+        new Slide("Dokumentum Összefoglaló", "documentsummary", "Foglaljuk össze", "images/documentsummary.jpg", "linear-gradient(90deg,rgba(207, 226, 255, 1) 1%, rgba(158, 197, 254, 1) 47%, rgba(52, 58, 64, 1) 100%)"),
+        new Slide("Receptek", "recipes", "Nézzük a recepteket", "images/recipes.jpg", "linear-gradient(90deg,rgba(255, 230, 156, 1) 1%, rgba(255, 218, 106, 1) 47%, rgba(102, 77, 3, 1) 100%)")
+    };
+    protected override void OnInitialized()
+    {
+        // Alaphelyzetben az első slide színe
+        BgStyle = Slides[ActiveIndex].BackgroundColor;
+    }
+
+    private void Prev()
+    {
+        ActiveIndex = (ActiveIndex + Slides.Count - 1) % Slides.Count;
+        ChangeBgColor(Slides[ActiveIndex].BackgroundColor);
+    }
+
+    private void Next()
+    {
+        ActiveIndex = (ActiveIndex + 1) % Slides.Count;
+        ChangeBgColor(Slides[ActiveIndex].BackgroundColor);
+    }
+
+    private void NavigateTo(string url) => NavigationManager.NavigateTo(url);
+
+    private void ChangeBgColor(string color)
+    {
+        BgStyle = color;
+        StateHasChanged();
+    }
+    private record Slide(string Title, string Url, string ButtonText, string BackgroundImageUrl, string BackgroundColor);
+}

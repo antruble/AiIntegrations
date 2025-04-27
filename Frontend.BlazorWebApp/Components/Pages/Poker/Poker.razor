@@ -1,0 +1,139 @@
+﻿@page "/poker/game"
+@using Frontend.BlazorWebApp.Components.Pages.Poker.Components
+@using Frontend.BlazorWebApp.StateServices
+@using Frontend.BlazorWebApp.Engines
+@using Backend.Shared.Models.Poker
+@* @using Backend.Poker.Domain.Entities
+@using Frontend.WebAssembly.Poker.Components.Pages.Poker.Components
+@using Frontend.WebAssembly.Poker.Components.Layout
+@using Frontend.WebAssembly.Poker.Engine
+@using Frontend.WebAssembly.Poker.Services
+ *@
+@rendermode InteractiveServer
+
+
+@inject GameStateService GameState
+@inject IHttpClientFactory HttpFactory
+@inject ILoggerFactory LoggerFactory
+@inject ILogger<Poker> Logger
+
+
+@if (isLoading) { <p class="text-center">Betöltés...</p> }
+else if (hasError) { <p class="text-center text-danger">Hiba történt a játék betöltése során.</p> }
+else if (_engine is null || GameState.CurrentGame is null) { <h1 class="text-center text-red">Nincs játék.</h1> }
+else if (GameState.CurrentGame.CurrentHand is null) { <h1 class="text-center text-red">Nincs hand.</h1> }
+else
+{
+    @if (!string.IsNullOrEmpty(GameState.CurrentHint))
+    {
+        <div class="alert alert-info mt-2">
+            <strong>Tanács:</strong> @GameState.CurrentHint
+        </div>
+    }
+
+
+    <div class="d-flex justify-content-center align-items-center" style="height: 100vh">
+        <PokerTable
+        CurrentGame="GameState.CurrentGame"
+        UserId="_engine.GetUserId()"
+        Winners="GameState.Winners"
+        GetSuitSymbol="GetSuitSymbol" />
+
+        @if (GameState.CurrentGame.CurrentGameAction == GameAction.PlayerAction
+            && _engine.GetUserId() == GameState.CurrentGame.CurrentHand.CurrentPlayerId)
+        {
+            <ActionToolbar
+            MaxRaise="MaxRaise"
+            OnFold="() => Fold()"
+            OnCall="() => Call()"
+            OnRaise="amt => Raise(amt)" 
+            OnHint="() => HintAsync()"/>
+        }
+    </div>
+}
+
+@code {
+    private bool _engineStarted = false;
+    private bool isLoading = true, hasError = false;
+    private PokerGameEngine? _engine;
+    private int MaxRaise => GameState.CurrentGame?
+                             .Players?
+                             .FirstOrDefault(p => p.Id == _engine?.GetUserId())?
+                             .Chips ?? 0;
+
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     if (_engine is null)
+    //     {
+    //         GameState.OnChange += RefreshUI;
+    //         await StartGameEngineAsync();
+    //         _engineStarted = true;
+    //     }
+    // }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_engineStarted)
+        {
+            GameState.OnChange += RefreshUI;
+            await StartGameEngineAsync();
+            _engineStarted = true;
+        }
+    }
+
+    private void Fold() => _engine!.RecordPlayerAction(new PlayerActionDto(PlayerActionType.Fold, null, DateTime.UtcNow));
+    private void Call() => _engine!.RecordPlayerAction(new PlayerActionDto(PlayerActionType.Call, null, DateTime.UtcNow));
+    private void Raise(int amount) => _engine!.RecordPlayerAction(new PlayerActionDto(PlayerActionType.Raise, amount, DateTime.UtcNow));
+    private async Task HintAsync()
+    {
+        if (_engine is null) return;
+
+        // Előző hint törlése (opcionális)
+        GameState.ClearHint();
+
+        await _engine.RequestHintAsync();
+    }
+
+    private async Task StartGameEngineAsync()
+    {
+        var engineLogger = LoggerFactory.CreateLogger<PokerGameEngine>();
+        if (GameState.CurrentGame is null)
+        {
+            throw new Exception("NULL");
+        }
+        _engine = new PokerGameEngine(GameState.CurrentGame, HttpFactory, engineLogger, StateHasChanged, GameState);
+        await _engine.InitAsync(CancellationToken.None);
+        _engine.Start();
+        isLoading = false;
+    }
+    public async ValueTask DisposeAsync()
+    {
+        // 1) Unsubscribe állapotváltozásra
+        GameState.OnChange -= RefreshUI;
+
+        // 2) Állítsd le a game­loop­ot (ha már van engine példány)
+        if (_engine is not null)
+        {
+            await _engine.StopAsync();
+            _engine.Dispose();
+        }
+    }
+    private async void RefreshUI()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private string GetSuitSymbol(SuitDto suit) =>
+        suit switch
+        {
+            SuitDto.Clubs => "♣",
+            SuitDto.Diamonds => "♦",
+            SuitDto.Hearts => "♥",
+            SuitDto.Spades => "♠",
+            _ => ""
+        };
+
+
+
+    public void Dispose() => GameState.OnChange -= RefreshUI;
+}

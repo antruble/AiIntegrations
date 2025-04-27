@@ -1,0 +1,40 @@
+﻿@using Backend.Shared.Models.Poker
+
+@rendermode InteractiveServer
+
+@if (CurrentGame.CurrentHand is not null)
+{
+    <div class="container">
+        <h1>Pot: @CurrentGame.CurrentHand?.Pot.MainPot</h1>
+
+        <div class="poker-table">
+            <CommunityCards Cards="CurrentGame.CurrentHand?.CommunityCards" GetSuitSymbol="GetSuitSymbol" />
+
+            <div class="seat-dealer"><strong>Dealer</strong></div>
+
+            @foreach (var player in CurrentGame.Players)
+            {
+                <PlayerSeat Player="player"
+                            UserId="UserId"
+                            CurrentGameAction="CurrentGame.CurrentGameAction"
+                            CurrentPlayerId="CurrentGame.CurrentHand!.CurrentPlayerId"
+                            PivotPlayerId="CurrentGame.CurrentHand?.PivotPlayerId"
+                            Winners="Winners"
+                            GetSuitSymbol="GetSuitSymbol" />
+            }
+        </div>
+    </div>
+}
+@code {
+    [Parameter, EditorRequired]
+    public GameDto CurrentGame { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public Guid UserId { get; set; }
+
+    [Parameter]
+    public IEnumerable<WinnerDto>? Winners { get; set; }
+
+    [Parameter, EditorRequired]
+    public Func<SuitDto, string> GetSuitSymbol { get; set; } = _ => string.Empty;
+}
