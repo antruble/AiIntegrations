@@ -20,8 +20,13 @@ namespace Backend.Shared.Models.Recipes
     public record RecipeSuggestionDto(
         string Title,
         string ShortDescription,
-        string DetailedRecipe
+        DetailedRecipeDto DetailedRecipe
     );
 
+    public record DetailedRecipeDto(
+        string CookTime,
+        List<string> Ingredients,
+        List<string> Steps
+    );
     public record RecipesResponseDto(IReadOnlyList<RecipeSuggestionDto> Recipes);
 }

@@ -6,7 +6,9 @@ using Backend.Infrastructure.Services.DocumentSummary;
 using Backend.Infrastructure.Services.Poker;
 using Backend.Infrastructure.Services.Recipes;
 using Backend.Shared.Models;
+using Backend.Shared.Models.DocumentSummary;
 using Backend.Shared.Models.Poker;
+using Backend.Shared.Models.Recipes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,7 +30,7 @@ namespace Backend.Infrastructure.DependencyInjection
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             services
-                .AddScoped<IOpenAiClient<RecipesRequest, RecipesResponse>, OpenAiRecipesClient>()
+                .AddScoped<IOpenAiClient<RecipeRequestDto, RecipesResponseDto>, OpenAiRecipesClient>()
                 .AddScoped<IOpenAiClient<DocumentSummaryRequest, DocumentSummaryResponse>, OpenAiSummaryClient>()
                 .AddScoped<IOpenAiClient<HintRequest, HintResponse>, OpenAiHintClient>();
 

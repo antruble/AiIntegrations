@@ -126,6 +126,9 @@ namespace Backend.Application.Services.Poker
         }
         public async Task<Game> DealNextRound(Game game)
         {
+            foreach (var player in game.Players)
+                player.ActionsHistory.Clear();
+
             if (game.CurrentHand!.HandStatus == HandStatus.River)
             {
                 await ProcessFinishedHandAsync(game);
@@ -135,7 +138,7 @@ namespace Backend.Application.Services.Poker
                 if (game.Players.Count(p => p.PlayerStatus == PlayerStatus.Waiting) < 2)
                     game.CurrentHand!.SkipActions = true;
                 _logger.LogInformation($"Bezárult az előző kör, új kört osztunk. Előző kör: {game.CurrentHand!.HandStatus}");
-
+                
                 var deck = GetCurrentDeck(game);
                 game.CurrentHand.DealNextRound(deck!);
                 game.CurrentHand.Pot.CompleteRound();
@@ -338,6 +341,7 @@ namespace Backend.Application.Services.Poker
                 player.PlayerStatus = PlayerStatus.AllIn;
             }
             player.DeductChips(amount);
+            player.ActionsHistory.Add(new PlayerAction(PlayerActionType.Call, amount));
             RegisterContribution(game, player, amount);
         }
 

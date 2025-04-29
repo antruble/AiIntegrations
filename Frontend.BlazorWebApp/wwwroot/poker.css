@@ -56,9 +56,7 @@
 
 /* Dealer ülés – asztal legalján, középen */
 .seat-dealer {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
+
     transform: translateX(-50%);
     width: 120px;
     text-align: center;
@@ -70,14 +68,87 @@
 /* Játékos ülések – 6 játékos pozíciói */
 .player-seat {
     position: absolute;
-    width: 120px;
-    text-align: center;
-    padding: 0.5rem;
-    background-color: rgba(255,255,255,0.8);
-    border: 1px solid #ccc;
+    width: 100px;
+    height: 100px;
+    background-color: rgba(255, 255, 255, 0.85);
+    border: 2px solid #ccc;
     border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: visible;
 }
-/* Példa pozíciók: finomhangolás szükséges a kívánt elrendezéshez */
+
+@keyframes discard {
+    to {
+        transform: translateY(30px) rotate(20deg);
+        opacity: 0;
+    }
+}
+
+.player-seat.folded .player-cards .card {
+    animation: discard 0.6s ease-out forwards;
+}
+
+    /* Foldolt játékos elhalványítva */
+    .player-seat.folded {
+        opacity: 0.4;
+    }
+
+/* Pivot-dealer jelzés */
+.pivot-badge {
+    position: absolute;
+    top: -10px;
+    left: 70%;
+    transform: translateX(-50%);
+    background-color: #6c5ce7;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* Blind badge */
+.blind-badge {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.blind-badge.small-blind {
+    background-color: #f1c40f;
+    color: #000;
+}
+
+.blind-badge.big-blind {
+    background-color: #e74c3c;
+    color: #fff;
+}
+
+/* Játékos neve és zsetonok */
+.player-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+}
+
+.chip-stack {
+    font-size: 0.75rem;
+    color: #2d3436;
+    margin-bottom: 0.5rem;
+}
+
 .seat-0 {
     top: 50%;
     left: -4rem;
@@ -117,4 +188,12 @@
     display: flex;
     justify-content: center;
     gap: 5px;
+}
+
+.selected {
+    border: 4px solid #66c2ff;
+}
+
+.winner {
+    border: 4px solid #D3AF37;
 }

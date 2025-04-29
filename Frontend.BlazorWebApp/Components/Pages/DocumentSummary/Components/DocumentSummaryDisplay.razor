@@ -1,22 +1,64 @@
 ﻿@using Backend.Shared.Models.DocumentSummary
 
+<style>
+    .summary-card {
+    border-radius: 0.75rem;
+    overflow: hidden;
+}
 
-<div class="container my-4">
-    <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-secondary" @onclick="OnNewUpload">Új fájl feltöltése</button>
-    </div>
-    <div class="card shadow w-100 h-100">
-        <div class="card-header bg-primary text-white">
-            <h5 class="card-title mb-0">Összefoglaló - @RenderedStyle stílusban</h5>
+/* Ugyanaz a gradiens, mint a page háttérének tetején */
+.header-gradient {
+    background-image: linear-gradient(315deg, #2d3436 0%, #3B3B3B 74%);
+}
+
+/* Kártya belső padding és terek */
+.summary-card .card-body {
+    padding: 1.8rem 1.5rem;
+}
+.summary-card .card-footer {
+    padding: 1.2rem;
+}
+
+/* Szekciócímek */
+.summary-card h6 {
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+/* Gomb kiemelés hover eseménynél */
+.btn-outline-dark:hover {
+    background-color: #2d3436;
+    color: #fff;
+    border-color: #2d3436;
+    transition: background-color 0.2s ease;
+}
+</style>
+
+<div class="container mt-4 d-flex flex-column justify-content-between px-5" style="flex-grow: 1;">
+    <div class="card shadow  summary-card w-100 h-100 mb-0" style="border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
+        <div class="card-header header-gradient text-white text-center">
+            <h5 class="mb-0">
+                Összefoglaló -
+                <small class="fw-normal">@RenderedStyle</small>
+                stílusban
+            </h5>
         </div>
         <div class="card-body">
             <h6 class="card-subtitle mb-3 text-muted">Rövid összegzés</h6>
-            <p>@Response.ShortSummary</p>
+            <p class="px-2">@Response.ShortSummary</p>
             <hr />
             <h6 class="card-subtitle mb-3 text-muted">Részletes összegzés</h6>
-            <p>@Response.DetailedSummary</p>
+            <p class="px-2">@Response.DetailedSummary</p>
+        </div>
+        <div class="card-footer bg-transparent border-0 text-center my-4">
+            <button class="btn btn-outline-dark px-4 py-2 rounded-pill"
+                    @onclick="OnNewUpload">
+                Új fájl feltöltése
+            </button>
         </div>
     </div>
+
+    
 </div>
 
 @code {

@@ -160,23 +160,39 @@ namespace Backend.Api.Controllers
         [HttpPost("dealnextround")]
         public async Task<IActionResult> DealNextRound(Guid gameId)
         {
-            await ProcessGameRequestAsync(gameId, async () =>
+            try
             {
-                var game = await _gameService.GetGameByIdAsync(gameId) ?? throw new Exception($"Nem található game {gameId} ID-val!");
-                if (game.CurrentHand!.HandStatus == Domain.Entities.HandStatus.Shutdown)
-                    game = await _gameService.SetGameActionShowOff(game);
-                else
-                    game = await _gameService.DealNextRound(game);
-            });
-            var updatedGame = await _gameService.GetGameByIdAsync(gameId);
-            return Ok(updatedGame);
+                await ProcessGameRequestAsync(gameId, async () =>
+                {
+                    var game = await _gameService.GetGameByIdAsync(gameId) ?? throw new Exception($"Nem található game {gameId} ID-val!");
+                    if (game.CurrentHand!.HandStatus == Domain.Entities.HandStatus.Shutdown)
+                        game = await _gameService.SetGameActionShowOff(game);
+                    else
+                        game = await _gameService.DealNextRound(game);
+                });
+                var updatedGame = await _gameService.GetGameByIdAsync(gameId);
+                return Ok(updatedGame);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"DealNextRound.Error: {ex.Message}", ex);
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("getwinners")]
         public async Task<IActionResult> GetWinners(Guid handId)
         {
-            var winners = await _gameService.GetWinners(handId);
-            return Ok(winners);
+            try
+            {
+                var winners = await _gameService.GetWinners(handId);
+                return Ok(winners);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"GetWinners.Error: {ex.Message}", ex);
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("gethint")]

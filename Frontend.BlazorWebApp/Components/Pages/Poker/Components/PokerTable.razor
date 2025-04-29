@@ -5,13 +5,20 @@
 @if (CurrentGame.CurrentHand is not null)
 {
     <div class="container">
-        <h1>Pot: @CurrentGame.CurrentHand?.Pot.MainPot</h1>
+        <div class="poker-table position-relative mx-auto mt-4">
 
-        <div class="poker-table">
+            
+
             <CommunityCards Cards="CurrentGame.CurrentHand?.CommunityCards" GetSuitSymbol="GetSuitSymbol" />
+            <div class="position-absolute start-50 bottom-0">
+                <div class="pot-display  translate-middle-x bg-light border rounded-pill shadow-sm px-3 py-1 text-center" style="bottom: 2rem;">
+                    <strong>Pot:</strong> @CurrentGame.CurrentHand!.Pot.MainPot
+                </div>
 
-            <div class="seat-dealer"><strong>Dealer</strong></div>
-
+                <div class="seat-dealer text-center my-3">
+                    <span class="badge bg-secondary">Dealer</span>
+                </div>
+            </div>
             @foreach (var player in CurrentGame.Players)
             {
                 <PlayerSeat Player="player"

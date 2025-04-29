@@ -1,23 +1,138 @@
 ﻿@rendermode InteractiveServer
 
+<style>
+    /* A toolbar fix pozícióban, a képernyő alján középre */
+    .action-toolbar-container {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: auto;
+        z-index: 1050;
+        pointer-events: none; /* csak a belső gombokra engedélyezzük a kattintást */
+    }
+
+    /* Maga a sáv: félig átlátszó fehér háttér, lekerekített */
+    .action-toolbar {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 2rem;
+        padding: 0.5rem 1rem;
+        pointer-events: all;
+        backdrop-filter: blur(8px);
+    }
+
+    /* Gombok: egységes méret, lekerekítés, finom hover */
+    .action-btn {
+        padding: 0.5rem 1.25rem;
+        font-weight: 500;
+        transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+
+        .action-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+    /* Raise sáv: keskeny, lágy színezés */
+    .raise-container {
+        display: flex;
+        align-items: center;
+    }
+
+    .raise-label {
+        font-size: 0.9rem;
+        color: #2d3436;
+    }
+
+    .slider-wrapper {
+        position: relative;
+        width: 150px;
+        margin-right: 0.5rem;
+    }
+
+    .raise-slider {
+        width: 100%;
+    }
+
+    .value-bubble {
+        position: absolute;
+        top: -1.2rem;
+        transform: translateX(-50%);
+        background-color: #fff;
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        white-space: nowrap;
+        pointer-events: none;
+    }
+
+    .raise-slider::-webkit-slider-thumb {
+        height: 16px;
+        width: 16px;
+        border-radius: 50%;
+        background: #28a745;
+        cursor: pointer;
+        margin-top: -4px;
+    }
+
+    .raise-slider::-webkit-slider-runnable-track {
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(0, 0, 0, 0.1);
+    }
+
+    .raise-slider::-moz-range-thumb {
+        height: 16px;
+        width: 16px;
+        border-radius: 50%;
+        background: #28a745;
+        border: none;
+    }
+
+    .raise-slider::-moz-range-track {
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(0, 0, 0, 0.1);
+    }
+
+</style>
 <div class="action-toolbar-container">
-    <div class="action-toolbar shadow">
-        <button class="btn btn-danger action-btn" @onclick="() => OnFold.InvokeAsync()">Fold</button>
-        <button class="btn btn-primary action-btn" @onclick="() => OnCall.InvokeAsync()">Call</button>
-        <div class="raise-container">
-            <label for="raiseRange" class="raise-label">Raise: @raiseAmount</label>
-            <input id="raiseRange"
-                   type="range"
-                   min="0"
-                   max="@MaxRaise"
-                   @bind="raiseAmount"
-                   class="raise-slider" />
-            <button class="btn btn-success action-btn"
+    <div class="action-toolbar d-flex align-items-center shadow-sm">
+        <button class="btn btn-danger action-btn rounded-pill"
+                @onclick="() => OnFold.InvokeAsync()">
+            Fold
+        </button>
+        <button class="btn btn-primary action-btn rounded-pill ms-2"
+                @onclick="() => OnCall.InvokeAsync()">
+            Call
+        </button>
+        <div class="raise-container d-flex align-items-center ms-3">
+            <div class="slider-wrapper position-relative">
+                <input id="raiseRange"
+                       type="range"
+                       min="0"
+                       max="@MaxRaise"
+                       @bind="raiseAmount"
+                       @bind:event="oninput"
+                       class="raise-slider" />
+                <div class="value-bubble"
+                     style="left:@(MaxRaise > 0
+                    ? $"{(double)raiseAmount/MaxRaise*100:F1}%"
+                    : "0%")">
+                    @raiseAmount
+                </div>
+            </div>
+            <button class="btn btn-success action-btn rounded-pill ms-2"
                     @onclick="() => OnRaise.InvokeAsync(raiseAmount)">
                 Raise
             </button>
         </div>
-        <button class="btn btn-warning action-btn" @onclick="() => OnHint.InvokeAsync()">Hint</button>
+        <button class="btn btn-warning action-btn rounded-pill ms-2"
+                @onclick="() => OnHint.InvokeAsync()">
+            Hint
+        </button>
     </div>
 </div>
 

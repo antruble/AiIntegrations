@@ -1,4 +1,5 @@
 ﻿using Backend.Shared.Models;
+using Backend.Shared.Models.DocumentSummary;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;

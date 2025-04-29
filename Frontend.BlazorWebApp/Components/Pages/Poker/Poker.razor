@@ -16,7 +16,7 @@
 @inject IHttpClientFactory HttpFactory
 @inject ILoggerFactory LoggerFactory
 @inject ILogger<Poker> Logger
-
+@inject NavigationManager NavManager
 
 @if (isLoading) { <p class="text-center">Betöltés...</p> }
 else if (hasError) { <p class="text-center text-danger">Hiba történt a játék betöltése során.</p> }
@@ -32,7 +32,7 @@ else
     }
 
 
-    <div class="d-flex justify-content-center align-items-center" style="height: 100vh">
+    <div class="d-flex justify-content-center align-items-center flex-column relative" style="height: 100vh">
         <PokerTable
         CurrentGame="GameState.CurrentGame"
         UserId="_engine.GetUserId()"
@@ -42,12 +42,14 @@ else
         @if (GameState.CurrentGame.CurrentGameAction == GameAction.PlayerAction
             && _engine.GetUserId() == GameState.CurrentGame.CurrentHand.CurrentPlayerId)
         {
-            <ActionToolbar
-            MaxRaise="MaxRaise"
-            OnFold="() => Fold()"
-            OnCall="() => Call()"
-            OnRaise="amt => Raise(amt)" 
-            OnHint="() => HintAsync()"/>
+            <div class="w-100 mt-5 d-flex justify-content-center" style="position: absolute; bottom:0; left; 0;">
+                <ActionToolbar
+                MaxRaise="MaxRaise"
+                OnFold="() => Fold()"
+                OnCall="() => Call()"
+                OnRaise="amt => Raise(amt)" 
+                OnHint="() => HintAsync()"/>
+            </div>
         }
     </div>
 }
@@ -61,20 +63,11 @@ else
                              .FirstOrDefault(p => p.Id == _engine?.GetUserId())?
                              .Chips ?? 0;
 
-    // protected override async Task OnInitializedAsync()
-    // {
-    //     if (_engine is null)
-    //     {
-    //         GameState.OnChange += RefreshUI;
-    //         await StartGameEngineAsync();
-    //         _engineStarted = true;
-    //     }
-    // }
-
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && !_engineStarted)
         {
+            NavManager.LocationChanged += OnLocationChanged;
             GameState.OnChange += RefreshUI;
             await StartGameEngineAsync();
             _engineStarted = true;
@@ -106,18 +99,33 @@ else
         _engine.Start();
         isLoading = false;
     }
-    public async ValueTask DisposeAsync()
+    private async void OnLocationChanged(object? sender, LocationChangedEventArgs args)
     {
-        // 1) Unsubscribe állapotváltozásra
-        GameState.OnChange -= RefreshUI;
+        // Ha a user már nem ezen az útvonalon van:
+        if (!args.Location.Contains("/poker/game", StringComparison.OrdinalIgnoreCase))
+        {
+            NavManager.LocationChanged -= OnLocationChanged;
+            await StopAndDisposeEngineAsync();
+        }
+    }
 
-        // 2) Állítsd le a game­loop­ot (ha már van engine példány)
+    private async Task StopAndDisposeEngineAsync()
+    {
         if (_engine is not null)
         {
             await _engine.StopAsync();
             _engine.Dispose();
+            _engine = null;
         }
     }
+
+    public void Dispose()
+    {
+        // komponens dispose: mindenről leiratkozunk
+        NavManager.LocationChanged -= OnLocationChanged;
+        GameState.OnChange -= RefreshUI;
+    }
+
     private async void RefreshUI()
     {
         await InvokeAsync(StateHasChanged);
@@ -132,8 +140,4 @@ else
             SuitDto.Spades => "♠",
             _ => ""
         };
-
-
-
-    public void Dispose() => GameState.OnChange -= RefreshUI;
 }

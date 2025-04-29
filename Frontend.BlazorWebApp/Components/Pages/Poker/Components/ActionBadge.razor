@@ -1,0 +1,81 @@
+﻿@using Backend.Shared.Models.Poker
+@inject IJSRuntime JS
+
+<style>
+    .action-badge {
+        position: absolute;
+        top: -1.2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        opacity: 1;
+        transition: opacity 0.5s ease;
+        pointer-events: none;
+    }
+
+        .action-badge.fold {
+            background: #e74c3c;
+            color: #fff;
+        }
+
+        .action-badge.bet {
+            background: #f39c12;
+            color: #000;
+        }
+
+        .action-badge.check {
+            background: #2ecc71;
+            color: #fff;
+        }
+
+</style>
+
+<div class="action-badge @CssClass" @ref="badgeEl">
+    @IconMarkup
+    <span class="label">@Label</span>
+</div>
+
+@code {
+    [Parameter] public PlayerActionDto Action { get; set; } = default!;
+
+    private ElementReference badgeEl;
+
+    // Akció típus szerint
+    private string CssClass => Action.ActionType switch
+    {
+        PlayerActionType.Fold => "fold",
+        PlayerActionType.Raise => "bet",
+        PlayerActionType.Call => "bet",
+        PlayerActionType.Check => "check",
+        _ => ""
+    };
+    private RenderFragment IconMarkup => Action.ActionType switch
+    {
+        PlayerActionType.Fold => __builder => __builder.AddContent(0, "🃏"),
+        PlayerActionType.Call => __builder => __builder.AddContent(0, "💰"),
+        PlayerActionType.Raise => __builder => __builder.AddContent(0, "💰"),
+        PlayerActionType.Check => __builder => __builder.AddContent(0, "✔️"),
+        _ => __builder => { }
+    };
+    private string Label => Action.ActionType switch
+    {
+        PlayerActionType.Fold => "Fold",
+        PlayerActionType.Call => $"{Action.Amount} chips",
+        PlayerActionType.Raise => $"{Action.Amount} chips",
+        PlayerActionType.Check => "Check",
+        _ => ""
+    };
+
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //     // Eltűnés néhány mp után
+    //     await Task.Delay(2000);
+    //     await JS.InvokeVoidAsync("fadeOutAndRemove", badgeEl);
+    // }
+}

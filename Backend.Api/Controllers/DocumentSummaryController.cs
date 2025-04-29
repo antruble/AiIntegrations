@@ -2,6 +2,7 @@
 using Backend.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Backend.Shared.Models;
+using Backend.Shared.Models.DocumentSummary;
 
 namespace Backend.Api.Controllers
 {

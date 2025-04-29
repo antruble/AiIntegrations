@@ -7,7 +7,12 @@
 
 @inject IHttpClientFactory HttpFactory
 
-<div class="container my-4">
+<div class="container bg-white vh-100 align-items-center flex-column">
+    <header class="w-100 d-flex justify-content-center pt-2">
+        <div class="px-4" style="border-bottom: 1px solid #C5C5C5">
+            <h3 class="text-center">Receptajánló AI segítségével</h3>
+        </div>
+    </header>
     @if (selectedRecipe == null && (recipes == null || !recipes.Any()))
     {
         <RecipeSearchForm

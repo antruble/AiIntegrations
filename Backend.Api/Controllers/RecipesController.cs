@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text;
 using Backend.Application.Interfaces;
 using Backend.Shared.Models;
+using Backend.Shared.Models.Recipes;
 
 namespace Backend.Api.Controllers
 {
@@ -10,10 +11,10 @@ namespace Backend.Api.Controllers
     [Route("api/[controller]")]
     public class RecipesController : ControllerBase
     {
-        private readonly IOpenAiClient<RecipesRequest, RecipesResponse> _openAiRecipesClient;
+        private readonly IOpenAiClient<RecipeRequestDto, RecipesResponseDto> _openAiRecipesClient;
 
         public RecipesController(
-            IOpenAiClient<RecipesRequest, RecipesResponse> openAiRecipesClient)
+            IOpenAiClient<RecipeRequestDto, RecipesResponseDto> openAiRecipesClient)
         {
             _openAiRecipesClient = openAiRecipesClient;
         }
@@ -25,7 +26,7 @@ namespace Backend.Api.Controllers
         /// <param name="request">A felhasználó által megadott paraméterek (leírás, hozzávalók)</param>
         /// <returns>A generált receptek listája</returns>
         [HttpPost("generate")]
-        public async Task<IActionResult> GenerateRecipes([FromBody] RecipesRequest request)
+        public async Task<IActionResult> GenerateRecipes([FromBody] RecipeRequestDto request)
         {
             if (request == null || string.IsNullOrWhiteSpace(request.Description))
             {

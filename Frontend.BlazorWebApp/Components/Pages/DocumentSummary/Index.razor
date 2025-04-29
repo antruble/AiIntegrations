@@ -6,9 +6,12 @@
 
 @inject IHttpClientFactory HttpFactory
 
-<div class="container py-5">
-    <h3 class="mb-4 text-center">Dokumentum összefoglaló</h3>
-
+<div class="container bg-white vh-100 align-items-center flex-column">
+    <header class="w-100 d-flex justify-content-center pt-2">
+        <div class="px-4" style="border-bottom: 1px solid #C5C5C5">
+            <h3 class="text-center">Dokumentum összefoglalása AI segítségével</h3>
+        </div>
+    </header>
     @if (showUploadModal)
     {
         <FileUploadModal SelectedFile="selectedFile"
@@ -26,7 +29,7 @@
     else if (aiResponse != null)
     {
         <DocumentSummaryDisplay Response="aiResponse"
-                                RenderedStyle="renderedStyle"
+                                RenderedStyle="@renderedStyle"
                                 OnNewUpload="() => showUploadModal = true" />
     }
 </div>

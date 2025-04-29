@@ -1,33 +1,41 @@
 ﻿@using Backend.Shared.Models.Poker
 @rendermode InteractiveServer
 
-<div class="player-seat seat-@Player.Seat @(CssClasses)">
+<div class="player-seat seat-@Player.Seat 
+    @(Player.PlayerStatus == PlayerStatus.Folded ? "folded" : "")
+    @(CurrentGameAction == GameAction.PlayerAction && CurrentPlayerId == Player.Id ? "selected" : "" )
+    @(Winners is not null && Winners.Any(w => w.PlayerId == Player.Id) ? "winner" : "" )
+    ">
+    
+
+    @* Pivot dealer jelzés *@
     @if (Player.Id == PivotPlayerId)
     {
-        <strong>PIVOT</strong>
+        <div class="pivot-badge">D</div>
     }
-    <strong>@Player.Name</strong>
-    <div>@Player.Chips chips</div>
 
-    @if (Player.BlindStatus == BlindStatus.SmallBlind)
+    @* Vakokat itt, kívül lebegve jelöljük *@
+    @if (Player.BlindStatus != BlindStatus.None)
     {
-        <div>Kis VAK</div>
+        <div class="blind-badge @(Player.BlindStatus == BlindStatus.SmallBlind ? "small-blind" : "big-blind")">
+            @(Player.BlindStatus == BlindStatus.SmallBlind ? "SB" : "BB")
+        </div>
     }
-    else if (Player.BlindStatus == BlindStatus.BigBlind)
-    {
-        <div>Nagy VAK</div>
-    }
+
+    @* Játékos neve és zsetonjai *@
+    <div class="player-name mb-4 text-white">@Player.Name</div>
+    <div class="chip-stack">@Player.Chips</div>
 
     @if (Player.PlayerStatus != PlayerStatus.Folded)
     {
         <div class="player-cards">
             @if (CurrentGameAction == GameAction.ShowOff
-           || Player.Id == UserId
-           || Player.HasToRevealCards)
+         || Player.Id == UserId
+         || Player.HasToRevealCards)
             {
                 @foreach (var card in Player.HoleCards)
                 {
-                    <div class="card @card.Suit.ToString().ToLower()">
+                    <div class="card @(card.Suit.ToString().ToLower())">
                         <div class="rank">@card.DisplayValue</div>
                         <div class="suit">@GetSuitSymbol(card.Suit)</div>
                     </div>
@@ -39,6 +47,12 @@
                 {
                     <div class="card back"></div>
                 }
+            }
+        </div>
+        <div style="position: absolute; bottom: -3.5rem;">
+            @if (Player.LastAction is { } act)
+            {
+                <ActionBadge Action="act" />
             }
         </div>
     }
@@ -62,6 +76,8 @@
 
     [Parameter, EditorRequired]
     public Func<SuitDto, string> GetSuitSymbol { get; set; } = _ => string.Empty;
+
+    private HashSet<DateTime> shownActions = new();
 
     private string CssClasses
     {

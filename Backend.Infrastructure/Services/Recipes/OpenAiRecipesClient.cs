@@ -1,4 +1,5 @@
 ﻿using Backend.Shared.Models;
+using Backend.Shared.Models.Recipes;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -10,29 +11,33 @@ using System.Threading.Tasks;
 namespace Backend.Infrastructure.Services.Recipes
 {
     public class OpenAiRecipesClient
-    : BaseOpenAiClient<RecipesRequest, RecipesResponse>
+    : BaseOpenAiClient<RecipeRequestDto, RecipesResponseDto>
     {
         private const string BaseSystemMessage = @"
             You are an AI chef specialized in generating creative and detailed recipes.
             Based on the user's request, provide 10 recipe suggestions along with their ingredients and preparation steps.
-            **Output must be strictly valid JSON only.** 
-            Produce **only** a JSON array of objects—no explanatory text, no Markdown—where each object has exactly these three properties:
-              ""Title"" (string),
-              ""ShortDescription"" (string),
-              ""DetailedRecipe"" (string).
-            Use **double quotes** for all property names and string values.
-            Ensure the entire response is written in Hungarian.
-            Incorporate the user's provided ingredients into the recipes when applicable.
+            Output must be strictly valid JSON only.  
+            Produce only a JSON array of objects—no explanatory text—where each object has exactly these properties:
+              ""Title"": string,  
+              ""ShortDescription"": string,  
+              ""DetailedRecipe"": {  
+                  ""CookTime"": string,  
+                  ""Ingredients"": [string],  
+                  ""Steps"": [string]  
+              }.
+            Use double quotes for all property names and values. Ensure the entire response is in Hungarian.
+            Incorporate the user's provided ingredients when applicable.
             ";
+
         public OpenAiRecipesClient(IConfiguration cfg)
             : base(cfg,
                 BaseSystemMessage)
         { }
 
-        protected override string BuildSystemMessage(RecipesRequest req)
+        protected override string BuildSystemMessage(RecipeRequestDto req)
             => _baseSystemMessage;
 
-        protected override string GetUserPrompt(RecipesRequest req)
+        protected override string GetUserPrompt(RecipeRequestDto req)
         {
             var sb = new StringBuilder();
             sb.AppendLine("Felhasználói recept kérés:");
@@ -44,11 +49,14 @@ namespace Backend.Infrastructure.Services.Recipes
             }
             return sb.ToString();
         }
-        protected override RecipesResponse ParseResponse(string json)
-            => new RecipesResponse
-            {
-                Recipes = JsonSerializer.Deserialize<List<RecipeDto>>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!
-            };
+        protected override RecipesResponseDto ParseResponse(string json)
+        {
+            var list = JsonSerializer.Deserialize<List<RecipeSuggestionDto>>(json,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                ?? throw new JsonException("A deszerializáció során null érték keletkezett.");
+
+            return new RecipesResponseDto(list);
+        }
+
     }
 }

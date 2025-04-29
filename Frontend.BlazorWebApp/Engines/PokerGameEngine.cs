@@ -252,6 +252,13 @@ namespace Frontend.BlazorWebApp.Engines
                 _logger.LogInformation($"PlayerAction: mivel a soron következő játékos bot, ezért várunk 2mp-t..");
                 await Task.Delay((int)(SPEED * 2000), token);
             }
+            //currentPlayer.ActionsHistory.Add(
+            //     new PlayerActionDto(
+            //         PlayerActionType.Raise,
+            //         100,
+            //         DateTime.Now
+            //     )
+            // );
 
             if (currentPlayer.IsBot)
                 await HandleBotActionsAsync(currentPlayer, token);
@@ -310,7 +317,6 @@ namespace Frontend.BlazorWebApp.Engines
 
         private async Task HandleBotActionsAsync(PlayerDto bot, CancellationToken token)
         {
-            _logger.LogWarning($"LEFUTOTT A BOT ACTION 1111111111111");
             var http = _httpClientFactory.CreateClient("PokerClient");
             try
             {
