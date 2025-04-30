@@ -45,7 +45,12 @@ namespace Backend.Domain.Entities
                 .ToList()
                 .ForEach(p => { p.PlayerStatus = PlayerStatus.Waiting; p.HasToRevealCards = false; });
             
-            Players = Players.OrderBy(p => p.Seat).ToList();
+            Players = Players
+                .OrderBy(p => p.Seat)
+                .ToList();
+
+            foreach (var player in Players)
+                player.ActionsHistory.Clear();
 
             var lastSmallBlindPlayer = Players.FirstOrDefault(p => p.BlindStatus == BlindStatus.SmallBlind); // A legutolsó kisvak
 
@@ -66,6 +71,10 @@ namespace Backend.Domain.Entities
             var currentPlayer = GetNextPlayer(nextBigBlindPlayer.Id);
 
             CurrentHand = new Hand(currentPlayer);
+
+            DeductPlayerChips(nextBigBlindPlayer, CurrentHand.BigBlindAmount);
+            DeductPlayerChips(nextSmallBlindPlayer, CurrentHand.BigBlindAmount / 2);
+
             CurrentHand.CurrentPlayerId = currentPlayer.Id;
             CurrentHand.DealHoleCards(Players);
 
@@ -73,6 +82,11 @@ namespace Backend.Domain.Entities
             CurrentGameAction = GameActions.DealingCards;
 
             return CurrentHand;
+        }
+        public void DeductPlayerChips(Player player, int amount)
+        {
+            player.DeductChips(amount);
+            CurrentHand!.Pot.AddContribution(player.Id, amount);
         }
 
         public void SwitchToTheNextPlayer(Player lastPlayer)

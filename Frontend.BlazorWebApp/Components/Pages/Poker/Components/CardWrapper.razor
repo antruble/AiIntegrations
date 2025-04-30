@@ -1,0 +1,29 @@
+﻿@using Backend.Shared.Models.Poker
+
+<style>
+    .card-wrapper {
+        display: inline-block;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        /* a border a kiemelésnél jelenik csak meg */
+        border-radius: 0.25rem;
+    }
+
+        .card-wrapper.highlighted {
+            transform: translateY(-8px);
+            box-shadow: 0 4px 12px rgba(255, 223, 0, 0.8);
+            border: 2px solid gold;
+        }
+</style>
+
+<div class="card-wrapper @(Card.IsHighlighted ? "highlighted" : "")">
+    <div class="card @Card.Suit.ToString().ToLower()">
+        <div class="rank">@Card.DisplayValue</div>
+        <div class="suit">@GetSuitSymbol(Card.Suit)</div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public CardDto Card { get; set; } = default!;
+    [Parameter] public Func<SuitDto, string> GetSuitSymbol { get; set; } = _ => string.Empty;
+}
+

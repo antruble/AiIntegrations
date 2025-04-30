@@ -124,7 +124,7 @@ namespace Backend.Domain.Entities
         /// </summary>
         /// <param name="evaluator">Az értékelő, amely implementálja az IPokerHandEvaluator interfészt</param>
         /// <returns>A kéz showdown eredménye, ami tartalmazza a győztes(ek) azonosítóit és a pot felosztását</returns>
-        public ICollection<Winner> CompleteHand(IPokerHandEvaluator evaluator, IList<Player> players)
+        public HandEvaluationResult CompleteHand(IPokerHandEvaluator evaluator, IList<Player> players)
         {
             if (evaluator == null)
                 throw new ArgumentNullException(nameof(evaluator));
@@ -132,7 +132,7 @@ namespace Backend.Domain.Entities
             if (Pot.CurrentRoundPot > 0)
                 Pot.CompleteRound();
 
-            return evaluator.Evaluate(this, players).ToList();
+            return evaluator.Evaluate(this, players);
         }
 
         public Deck RestoreDeck(IList<Card> drawnCards)

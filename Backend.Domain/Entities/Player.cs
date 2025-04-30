@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -46,39 +47,22 @@ namespace Backend.Domain.Entities
 
         public void DeductChips(int amount)
         {
-            if (amount > Chips || amount <= 0)
-                throw new Exception($"Something went wrong. Amount of chips: {amount}");
+            if (amount >= Chips)
+            {
+                amount = Chips;
+                PlayerStatus = PlayerStatus.AllIn;
+            }
 
+            AddActionToHistory(new PlayerAction(PlayerActionType.Call, amount));
             Chips -= amount;
         }
+
+        public void AddActionToHistory(PlayerAction action)
+            => ActionsHistory.Add(action);
+
         public void AddChips(int amount) => Chips += amount;
         public void ResetHoleCards() => HoleCards = new List<Card>();
         public void ResetChips() => Chips = 2000;
-        public void HandleAction(PlayerAction action)
-        {
-            switch (action.ActionType)
-            {
-                case PlayerActionType.Fold:
-                    PlayerStatus = PlayerStatus.Folded;
-                    return;
-                case PlayerActionType.Call:
-                case PlayerActionType.Raise:
-                    if (action.Amount is null || action.Amount <= 0)
-                        throw new Exception("Hiba a Player.HandleAction metódusban, mivel az amount <= 0 vagy null");
-
-                    DeductChips((int)action.Amount);
-                    if (Chips < 0)
-                    {
-                        Chips = 0;
-                        throw new Exception("Sok lesz ");
-                    }
-                    return;
-                case PlayerActionType.Check:
-                    return;
-                default:
-                    return;
-            }
-        }
         public void ResetPlayerAttributes()
         {
             BlindStatus = BlindStatus.None;
@@ -87,7 +71,11 @@ namespace Backend.Domain.Entities
 
             ResetHoleCards();
         }
-        public void Fold() => PlayerStatus = PlayerStatus.Folded;
+        public void Fold()
+        {
+            PlayerStatus = PlayerStatus.Folded;
+            AddActionToHistory(new PlayerAction(PlayerActionType.Fold, 0));
+        }
     }
 
     public enum PlayerActionType

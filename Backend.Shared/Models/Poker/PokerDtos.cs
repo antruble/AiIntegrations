@@ -115,7 +115,7 @@ namespace Backend.Shared.Models.Poker
         Two = 2, Three, Four, Five, Six, Seven, Eight, Nine, Ten,
         Jack, Queen, King, Ace
     }
-    public record CardDto(RankDto Rank, SuitDto Suit, string DisplayValue);
+    public record CardDto(RankDto Rank, SuitDto Suit, string DisplayValue, bool IsHighlighted);
     public record PokerHandResultDto(
         List<Guid> WinnerIds,
         Dictionary<Guid, decimal> PotAllocations

@@ -10,134 +10,154 @@ namespace Backend.Domain.Services
 {
     public interface IPokerHandEvaluator
     {
-        /// <summary>
-        /// Kiértékeli a megadott kezet, és meghatározza a győztes(ek) azonosítóját, valamint a pot felosztását.
-        /// </summary>
-        /// <param name="hand">A showdown-hoz szükséges kéz, ahol a közös lapoknak már legalább 5-nek kell lenniük</param>
-        /// <returns>A showdown eredménye</returns>
-        IList<Winner> Evaluate(Hand hand, IList<Player> players);
+        HandEvaluationResult Evaluate(Hand hand, IList<Player> players);
     }
-    /// <summary>
-    /// Kiszámolja egy adott játékos hole + community kártyáiból
-    /// a legjobb 5‑kártyás kéz rangját (PokerHandRank).
-    /// </summary>
     public interface IHandRankEvaluator
     {
         PokerHandRank EvaluateRank(IEnumerable<Card> holeCards, IEnumerable<Card> communityCards);
     }
-    /// <summary>
-    /// simplesített implementáció a Texas Hold’em showdown értékeléséhez.
-    /// Megjegyzés: A valós értékelési logika sokkal összetettebb,
-    /// ez csak egy struktúrális példa.
-    /// </summary>
     public class PokerHandEvaluator : IPokerHandEvaluator, IHandRankEvaluator
     {
-        public IList<Winner> Evaluate(Hand hand, IList<Player> players)
+        public HandEvaluationResult Evaluate(Hand hand, IList<Player> players)
         {
-            // Először szűrjük ki az aktív, nem falt játékosokat (például a showdown előtt)
-            var eligiblePlayers = players.Where(p => p.PlayerStatus != PlayerStatus.Folded && p.PlayerStatus != PlayerStatus.Lost).ToList();
+            // Csak a showdown-ra jogosultak
+            var eligible = players
+                .Where(p => p.PlayerStatus is not (PlayerStatus.Folded or PlayerStatus.Lost))
+                .ToList();
+
+            // Ha csak egy maradt, ő viszi mindent
+            if (eligible.Count == 1)
+            {
+                var lone = eligible[0];
+                var winner = new Winner
+                {
+                    HandId = hand.Id,
+                    PlayerId = lone.Id,
+                    Player = lone,
+                    Pot = hand.Pot.MainPot + hand.Pot.SidePots.Sum(sp => sp.Amount)
+                };
+
+                return new HandEvaluationResult(
+                    Winners: new List<Winner> { winner },
+                    WinningCards: new List<Card>()
+                );
+            }
+
             var winners = new List<Winner>();
+            var winningCardsSet = new HashSet<Card>();
 
-            if (eligiblePlayers.Count == 1)
+            // main pot
+            // 1) Minden játékos legjobb 5-öse + kombináció tartása
+            var bestMain = new Dictionary<Guid, (PokerHandRank Rank, List<Card> Combo)>();
+            foreach (var p in eligible)
             {
-                var player = eligiblePlayers[0];
-                var winner = new Winner { HandId = hand.Id, Player = player, PlayerId = player.Id, Pot = hand.Pot.MainPot };
-                return [winner];
-            }
-            // 1. Fő pot feldolgozása
-            // Feltételezzük, hogy a MainPot értékét a hand.Pot.MainPot tartalmazza.
-            if (eligiblePlayers.Any())
-            {
-                // Számoljuk ki minden játékos legjobb kezeit (ugyanúgy, mint eddig)
-                Dictionary<Guid, PokerHandRank> bestRanksMain = new Dictionary<Guid, PokerHandRank>();
-                foreach (var player in eligiblePlayers)
+                var all = p.HoleCards.Concat(hand.CommunityCards).ToList();
+                PokerHandRank? bestRank = null;
+                List<Card>? bestCombo = null;
+
+                foreach (var combo in GetAll5CardCombinations(all))
                 {
-                    var allCards = player.HoleCards.Concat(hand.CommunityCards).ToList();
-                    var combinations = GetAll5CardCombinations(allCards);
-                    PokerHandRank? bestRankForPlayer = null;
-                    foreach (var combo in combinations)
+                    var r = EvaluateCombo(combo);
+                    if (bestRank is null || r.CompareTo(bestRank) > 0)
                     {
-                        var rank = EvaluateCombo(combo);
-                        if (bestRankForPlayer == null || rank.CompareTo(bestRankForPlayer) > 0)
-                            bestRankForPlayer = rank;
+                        bestRank = r;
+                        bestCombo = combo;
                     }
-                    bestRanksMain[player.Id] = bestRankForPlayer!;
                 }
-                var bestOverallMain = bestRanksMain.Values.Max();
-                var mainPotWinners = bestRanksMain
-                    .Where(kvp => kvp.Value.CompareTo(bestOverallMain) == 0)
+
+                bestMain[p.Id] = (bestRank!, bestCombo!);
+            }
+
+            // 2) A legjobb rang
+            var topMainRank = bestMain.Values.Max(x => x.Rank);
+            var mainPotWinners = bestMain
+                .Where(kvp => kvp.Value.Rank.CompareTo(topMainRank) == 0)
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            // 3) Osztás
+            int mainShare = hand.Pot.MainPot / mainPotWinners.Count;
+            foreach (var pid in mainPotWinners)
+            {
+                var pl = eligible.First(p => p.Id == pid);
+                winners.Add(new Winner
+                {
+                    HandId = hand.Id,
+                    PlayerId = pid,
+                    Player = pl,
+                    Pot = mainShare
+                });
+
+                // győztes lapok gyűjtése
+                foreach (var c in bestMain[pid].Combo)
+                    winningCardsSet.Add(c);
+            }
+
+            // side pot
+            foreach (var side in hand.Pot.SidePots.OrderBy(sp => sp.Amount))
+            {
+                // csak ők vesznek részt
+                var sideElig = eligible.Where(p => side.EligiblePlayerIds.Contains(p.Id)).ToList();
+                if (!sideElig.Any()) continue;
+
+                // legjobb rank+combo
+                var bestSide = new Dictionary<Guid, (PokerHandRank, List<Card>)>();
+                foreach (var p in sideElig)
+                {
+                    var all = p.HoleCards.Concat(hand.CommunityCards).ToList();
+                    PokerHandRank? br = null;
+                    List<Card>? bc = null;
+                    foreach (var combo in GetAll5CardCombinations(all))
+                    {
+                        var r = EvaluateCombo(combo);
+                        if (br is null || r.CompareTo(br) > 0)
+                        {
+                            br = r;
+                            bc = combo;
+                        }
+                    }
+                    bestSide[p.Id] = (br!, bc!);
+                }
+
+                var topSideRank = bestSide.Values.Max(x => x.Item1);
+                var sideWinnersIds = bestSide
+                    .Where(kvp => kvp.Value.Item1.CompareTo(topSideRank) == 0)
                     .Select(kvp => kvp.Key)
                     .ToList();
 
-                int mainAllocation = hand.Pot.MainPot / mainPotWinners.Count;
-                foreach (var playerId in mainPotWinners)
+                int sideShare = side.Amount / sideWinnersIds.Count;
+                foreach (var pid in sideWinnersIds)
                 {
-                    winners.Add(new Winner
+                    var existing = winners.FirstOrDefault(w => w.PlayerId == pid);
+                    if (existing != null)
                     {
-                        HandId = hand.Id,
-                        PlayerId = playerId,
-                        Player = eligiblePlayers.First(p => p.Id == playerId),
-                        Pot = mainAllocation
-                    });
-                }
-            }
-
-            // 2. Side pot(ok) feldolgozása
-            foreach (var sidePot in hand.Pot.SidePots)
-            {
-                // Szűrjük azokat a játékosokat, akik jogosultak az adott side potra
-                var eligibleForSide = eligiblePlayers
-                    .Where(p => sidePot.EligiblePlayerIds.Contains(p.Id))
-                    .ToList();
-
-                if (!eligibleForSide.Any())
-                    continue; // Ha nincs jogosult, kihagyjuk
-
-                // Számoljuk ki az adott side potban a játékosok legjobb kezeit
-                Dictionary<Guid, PokerHandRank> bestRanksSide = new Dictionary<Guid, PokerHandRank>();
-                foreach (var player in eligibleForSide)
-                {
-                    var allCards = player.HoleCards.Concat(hand.CommunityCards).ToList();
-                    var combinations = GetAll5CardCombinations(allCards);
-                    PokerHandRank? bestRankForPlayer = null;
-                    foreach (var combo in combinations)
-                    {
-                        var rank = EvaluateCombo(combo);
-                        if (bestRankForPlayer == null || rank.CompareTo(bestRankForPlayer) > 0)
-                            bestRankForPlayer = rank;
-                    }
-                    bestRanksSide[player.Id] = bestRankForPlayer;
-                }
-                var bestOverallSide = bestRanksSide.Values.Max();
-                var sidePotWinners = bestRanksSide
-                    .Where(kvp => kvp.Value.CompareTo(bestOverallSide) == 0)
-                    .Select(kvp => kvp.Key)
-                    .ToList();
-
-                int sideAllocation = sidePot.Amount / sidePotWinners.Count;
-                foreach (var playerId in sidePotWinners)
-                {
-                    // Ha már van Winner bejegyzés az adott játékosra a fő potból, akkor az összeget összeadhatjuk
-                    var existingWinner = winners.FirstOrDefault(w => w.PlayerId == playerId);
-                    if (existingWinner != null)
-                    {
-                        existingWinner.Pot += sideAllocation;
+                        existing.Pot += sideShare;
                     }
                     else
                     {
+                        var pl = eligible.First(p => p.Id == pid);
                         winners.Add(new Winner
                         {
                             HandId = hand.Id,
-                            PlayerId = playerId,
-                            Player = eligiblePlayers.First(p => p.Id == playerId),
-                            Pot = sideAllocation
+                            PlayerId = pid,
+                            Player = pl,
+                            Pot = sideShare
                         });
                     }
+
+                    // és a side-combo lapjai is
+                    foreach (var c in bestSide[pid].Item2)
+                        winningCardsSet.Add(c);
                 }
             }
 
-            return winners;
+            // végül összerakjuk az eredményt
+            return new HandEvaluationResult(
+                Winners: winners,
+                WinningCards: winningCardsSet.ToList()
+            );
         }
+
         public PokerHandRank EvaluateRank(IEnumerable<Card> holeCards, IEnumerable<Card> communityCards)
         {
             var allCards = holeCards.Concat(communityCards).ToList();
@@ -157,7 +177,6 @@ namespace Backend.Domain.Services
         }
         private static IEnumerable<List<Card>> GetCombinations(List<Card> cards, int k)
         {
-            // Rekurzív kombinációgenerátor:
             if (k == 0)
             {
                 yield return new List<Card>();
@@ -182,25 +201,22 @@ namespace Backend.Domain.Services
             if (combo.Count != 5)
                 throw new Exception("nem 5");
 
-            // Rendezés csökkenő sorrendben
             var sorted = combo.OrderByDescending(c => (int)c.Rank).ToList();
 
-            // Ellenőrizzük, hogy flush-e (minden lap azonos színű-e)
             bool isFlush = combo.All(c => c.Suit == combo[0].Suit);
 
-            // Ellenőrizzük a straight-et: a lapoknek egymást követőnek kell lenniük.
             bool isStraight = IsStraight(sorted, out int highStraightRank);
 
-            // Csoportosítjuk a lapokat Rank szerint
             var rankGroups = combo.GroupBy(c => c.Rank)
                                   .OrderByDescending(g => g.Count())
                                   .ThenByDescending(g => (int)g.Key)
                                   .ToList();
+
             int maxGroupCount = rankGroups.First().Count();
 
             var rank = new PokerHandRank();
 
-            if (isFlush && isStraight)
+            if (isFlush && isStraight) // royale, és sor flush
             {
                 if (highStraightRank == (int)Rank.Ace)
                 {
@@ -213,31 +229,31 @@ namespace Backend.Domain.Services
                     rank.Kickers = new List<int> { highStraightRank };
                 }
             }
-            else if (maxGroupCount == 4)
+            else if (maxGroupCount == 4) // négy azonos
             {
                 rank.Category = HandCategory.FourOfAKind;
                 int fourRank = (int)rankGroups.First().Key;
                 int kicker = sorted.Where(c => (int)c.Rank != fourRank).Max(c => (int)c.Rank);
                 rank.Kickers = new List<int> { fourRank, kicker };
             }
-            else if (maxGroupCount == 3 && rankGroups.Count >= 2 && rankGroups[1].Count() >= 2)
+            else if (maxGroupCount == 3 && rankGroups.Count >= 2 && rankGroups[1].Count() >= 2) // fullhouse
             {
                 rank.Category = HandCategory.FullHouse;
                 int threeRank = (int)rankGroups.First().Key;
                 int pairRank = (int)rankGroups[1].Key;
                 rank.Kickers = new List<int> { threeRank, pairRank };
             }
-            else if (isFlush)
+            else if (isFlush) // flush
             {
                 rank.Category = HandCategory.Flush;
                 rank.Kickers = sorted.Select(c => (int)c.Rank).ToList();
             }
-            else if (isStraight)
+            else if (isStraight) // sor
             {
                 rank.Category = HandCategory.Straight;
                 rank.Kickers = new List<int> { highStraightRank };
             }
-            else if (maxGroupCount == 3)
+            else if (maxGroupCount == 3) // három azonos
             {
                 rank.Category = HandCategory.ThreeOfAKind;
                 int threeRank = (int)rankGroups.First().Key;
@@ -249,7 +265,7 @@ namespace Backend.Domain.Services
                 rank.Kickers = new List<int> { threeRank };
                 rank.Kickers.AddRange(kickers);
             }
-            else if (maxGroupCount == 2)
+            else if (maxGroupCount == 2) // pár
             {
                 var pairCount = rankGroups.Count(g => g.Count() == 2);
                 if (pairCount >= 2)
@@ -276,7 +292,7 @@ namespace Backend.Domain.Services
                     rank.Kickers.AddRange(kickers);
                 }
             }
-            else
+            else //magas lap
             {
                 rank.Category = HandCategory.HighCard;
                 rank.Kickers = sorted.Select(c => (int)c.Rank).ToList();
@@ -286,7 +302,6 @@ namespace Backend.Domain.Services
         }
         private bool IsStraight(List<Card> sortedCards, out int highStraightRank)
         {
-            // Feltételezzük, hogy a sortedCards csökkenő sorrendben van.
             var distinctRanks = sortedCards.Select(c => (int)c.Rank).Distinct().ToList();
             highStraightRank = 0;
             if (distinctRanks.Count < 5) return false;
@@ -309,7 +324,6 @@ namespace Backend.Domain.Services
                 }
             }
 
-            // Special case: Ace-alacsony straight (Ace, 2, 3, 4, 5)
             if (distinctRanks.Contains((int)Rank.Ace) &&
                 distinctRanks.Contains(2) &&
                 distinctRanks.Contains(3) &&

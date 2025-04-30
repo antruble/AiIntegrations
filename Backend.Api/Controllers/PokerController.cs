@@ -213,7 +213,8 @@ namespace Backend.Api.Controllers
                 .Select(c => new CardDto(
                      Rank: (RankDto)c.Rank,
                      Suit: (SuitDto)c.Suit,
-                     DisplayValue: c.DisplayValue
+                     DisplayValue: c.DisplayValue,
+                     IsHighlighted: c.IsHighlighted
                 ))
                 .ToList()
                 ?? new List<CardDto>();
@@ -222,7 +223,8 @@ namespace Backend.Api.Controllers
                 .Select(c => new CardDto(
                      Rank: (RankDto)c.Rank,
                      Suit: (SuitDto)c.Suit,
-                     DisplayValue: c.DisplayValue
+                     DisplayValue: c.DisplayValue,
+                     IsHighlighted: c.IsHighlighted
                 ))
                 .ToList();
 

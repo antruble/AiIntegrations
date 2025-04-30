@@ -139,7 +139,7 @@ namespace Backend.Application.Services.Poker
                 if (game.Players.Count(p => p.PlayerStatus == PlayerStatus.Waiting) < 2)
                     game.CurrentHand!.SkipActions = true;
                 _logger.LogInformation($"Bezárult az előző kör, új kört osztunk. Előző kör: {game.CurrentHand!.HandStatus}");
-                
+
                 var deck = GetCurrentDeck(game);
                 game.CurrentHand.DealNextRound(deck!);
                 game.CurrentHand.Pot.CompleteRound();
@@ -199,8 +199,14 @@ namespace Backend.Application.Services.Poker
         {
             try
             {
-                var winners = game.CurrentHand!.CompleteHand(_handEvaluator, game.Players);
-                winners
+                var result = game.CurrentHand!.CompleteHand(_handEvaluator, game.Players);
+
+                foreach (var card in result.WinningCards)
+                {
+                    card.IsHighlighted = true;
+                }
+
+                result.Winners
                     .Join(game.Players,
                           winner => winner.PlayerId,
                           player => player.Id,
@@ -210,16 +216,16 @@ namespace Backend.Application.Services.Poker
 
                 _logger.LogInformation(
                     "Winners: {WinnerNames}",
-                    string.Join(", ", winners.Select(w => w.Player.Name))
+                    string.Join(", ", result.Winners.Select(w => w.Player.Name))
                 );
 
-                _logger.LogInformation($"WinnersCount: {winners.Count}");
-                await _unitOfWork.Winners.AddRangeAsync(winners.ToList());
+                _logger.LogInformation($"WinnersCount: {result.Winners.Count}");
+                await _unitOfWork.Winners.AddRangeAsync(result.Winners.ToList());
                 await _unitOfWork.Winners.SaveChangesAsync();
             }
             catch (Exception ex)
             {
-
+                _logger.LogError($"Error a hand befejezése és mentése közben: {ex.Message}", ex);
                 throw;
             }
 
@@ -305,7 +311,18 @@ namespace Backend.Application.Services.Poker
 
                     break;
                 case PlayerActionType.Call:
-                    HandleCallAction(game, player);
+                    var amount = game.CurrentHand!.Pot.GetCallAmountForPlayer(player.Id);
+
+                    if (amount == 0)
+                    {
+                        action.ActionType = PlayerActionType.Check;
+                        player.AddActionToHistory(new PlayerAction(PlayerActionType.Check, 0));
+                    }
+                    else
+                    {
+                        game.DeductPlayerChips(player, amount);
+                    }
+
                     break;
                 case PlayerActionType.Raise:
                     if (action.Amount is null || action.Amount <= 0)
@@ -315,70 +332,12 @@ namespace Backend.Application.Services.Poker
                     break;
             }
         }
-        private void HandleCallAction(Game game, Player player)
-        {
-            var amount = game.CurrentHand!.Pot.GetCallAmountForPlayer(player.Id);
-
-            if (amount == 0)
-                return;
-
-            HandleChipsDeduction(game, player, amount);
-
-        }
-
         public int GetCallAmountForPlayer(Game game, Player player)
-            =>  game.CurrentHand!.Pot.GetCallAmountForPlayer(player.Id);
+            => game.CurrentHand!.Pot.GetCallAmountForPlayer(player.Id);
         private void HandleRaiseAction(Game game, Player player, int amount)
         {
-            HandleChipsDeduction(game, player, amount);
+            game.DeductPlayerChips(player, amount);
             game.SetCurrentPlayerToPivot(player.Id);
-        }
-
-        private void HandleChipsDeduction(Game game, Player player, int amount)
-        {
-
-            if (amount >= player.Chips)
-            {
-                amount = player.Chips;
-                player.PlayerStatus = PlayerStatus.AllIn;
-            }
-            player.DeductChips(amount);
-            player.ActionsHistory.Add(new PlayerAction(PlayerActionType.Call, amount));
-            RegisterContribution(game, player, amount);
-        }
-
-        private void RegisterContribution(Game game, Player player, int amount) =>
-            game.CurrentHand!.Pot.AddContribution(player.Id, amount);
-
-        private async Task<PlayerAction> ValidateAndFixActionAsync(Game game, Player player, PlayerAction action)
-        {
-            switch (action.ActionType)
-            {
-                case PlayerActionType.Fold:
-
-                    break;
-                case PlayerActionType.Call:
-                    action.Amount = game.CurrentHand!.Pot.GetCallAmountForPlayer(player.Id);
-
-                    // Ha nincs pot amit ki lehetne fizetni, akkor a call az egy check
-                    if (action.Amount == 0)
-                        action.ActionType = PlayerActionType.Check;
-                    // Ha több a tét, mint a teljes vagyon, akkor a vagyon a tét (all in)
-                    else if (action.Amount >= player.Chips)
-                        action.Amount = player.Chips;
-
-                    game.CurrentHand!.Pot.AddContribution(player.Id, (int)action.Amount);
-                    break;
-                case PlayerActionType.Raise:
-                    if (action.Amount is null || action.Amount <= 0)
-                        throw new Exception("Nem kéne itt bajnak");
-
-                    game.CurrentHand!.Pot.AddContribution(player.Id, (int)action.Amount);
-                    game.SetCurrentPlayerToPivot(player.Id);
-                    break;
-            }
-
-            return action;
         }
     }
 }

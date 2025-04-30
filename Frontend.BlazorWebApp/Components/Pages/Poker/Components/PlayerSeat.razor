@@ -35,10 +35,7 @@
             {
                 @foreach (var card in Player.HoleCards)
                 {
-                    <div class="card @(card.Suit.ToString().ToLower())">
-                        <div class="rank">@card.DisplayValue</div>
-                        <div class="suit">@GetSuitSymbol(card.Suit)</div>
-                    </div>
+                    <CardWrapper Card="card" GetSuitSymbol="GetSuitSymbol" />
                 }
             }
             else
@@ -49,7 +46,7 @@
                 }
             }
         </div>
-        <div style="position: absolute; bottom: -3.5rem;">
+        <div class="badge-container" style="position: absolute; bottom: -3.5rem;">
             @if (Player.LastAction is { } act)
             {
                 <ActionBadge Action="act" />

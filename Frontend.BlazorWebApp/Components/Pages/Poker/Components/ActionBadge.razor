@@ -2,6 +2,14 @@
 @inject IJSRuntime JS
 
 <style>
+    .seat-0 .badge-container {
+        right: -3.5rem;
+        top: 50%;
+    }
+    .seat-5 .badge-container {
+        left: -3.5rem;
+        top: 50%;
+    }
     .action-badge {
         position: absolute;
         top: -1.2rem;
@@ -66,16 +74,10 @@
     private string Label => Action.ActionType switch
     {
         PlayerActionType.Fold => "Fold",
-        PlayerActionType.Call => $"{Action.Amount} chips",
-        PlayerActionType.Raise => $"{Action.Amount} chips",
+        PlayerActionType.Call => $"{Action.Amount}",
+        PlayerActionType.Raise => $"{Action.Amount}",
         PlayerActionType.Check => "Check",
         _ => ""
     };
 
-    // protected override async Task OnAfterRenderAsync(bool firstRender)
-    // {
-    //     // Eltűnés néhány mp után
-    //     await Task.Delay(2000);
-    //     await JS.InvokeVoidAsync("fadeOutAndRemove", badgeEl);
-    // }
 }

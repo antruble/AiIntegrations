@@ -6,10 +6,7 @@
     {
         @foreach (var card in Cards)
         {
-            <div class="card @card.Suit.ToString().ToLower()">
-                <div class="rank">@card.DisplayValue</div>
-                <div class="suit">@GetSuitSymbol(card.Suit)</div>
-            </div>
+            <CardWrapper Card="card" GetSuitSymbol="GetSuitSymbol" />
         }
     }
 </div>

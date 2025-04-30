@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,12 +14,12 @@ namespace Backend.Domain.ValueObjects
         Jack, Queen, King, Ace
     }
 
-    //public record Card(Rank Rank, Suit Suit);
     public class Card : IEquatable<Card>
     {
         public Rank Rank { get; }
         public Suit Suit { get; }
         public string DisplayValue => GetDisplayValue();
+        public bool IsHighlighted { get; set; } = false;
 
         public Card(Rank rank, Suit suit)
         {
@@ -33,7 +34,6 @@ namespace Backend.Domain.ValueObjects
                 return numericValue.ToString();
             else
             {
-                // Például: Jack -> "J", Queen -> "Q", King -> "K", Ace -> "A"
                 string rankStr = Rank.ToString();
                 return rankStr.Substring(0, 1);
             }
@@ -57,7 +57,7 @@ namespace Backend.Domain.ValueObjects
 
         public override int GetHashCode()
         {
-            unchecked // Túlcsordulás engedélyezése
+            unchecked 
             {
                 int hash = 17;
                 hash = hash * 23 + Rank.GetHashCode();
