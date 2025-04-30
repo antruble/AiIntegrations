@@ -40,7 +40,11 @@ namespace Backend.Domain.Entities
 
         public Hand StartNewHand()
         {
-            Players.Where(p => p.PlayerStatus != PlayerStatus.Lost).ToList().ForEach(p => { p.PlayerStatus = PlayerStatus.Waiting; p.HasToRevealCards = false; });
+            Players
+                .Where(p => p.PlayerStatus != PlayerStatus.Lost)
+                .ToList()
+                .ForEach(p => { p.PlayerStatus = PlayerStatus.Waiting; p.HasToRevealCards = false; });
+            
             Players = Players.OrderBy(p => p.Seat).ToList();
 
             var lastSmallBlindPlayer = Players.FirstOrDefault(p => p.BlindStatus == BlindStatus.SmallBlind); // A legutolsó kisvak
@@ -58,6 +62,7 @@ namespace Backend.Domain.Entities
             nextBigBlindPlayer.BlindStatus = BlindStatus.BigBlind;
             nextSmallBlindPlayer.BlindStatus = BlindStatus.SmallBlind;
 
+            
             var currentPlayer = GetNextPlayer(nextBigBlindPlayer.Id);
 
             CurrentHand = new Hand(currentPlayer);
@@ -72,20 +77,16 @@ namespace Backend.Domain.Entities
 
         public void SwitchToTheNextPlayer(Player lastPlayer)
         {
-            //Players.Where(p => p.PlayerStatus == PlayerStatus.PlayersTurn).ToList().ForEach(p => p.PlayerStatus = PlayerStatus.Waiting);
             var player = GetNextPlayer(lastPlayer.Id);
-
             CurrentHand!.CurrentPlayerId = player.Id;
         }
-
         public void DealHoleCards()
         {
-            if (CurrentHand != null)
-            {
-                CurrentHand.DealHoleCards(Players);
-            }
-        }
+            if (CurrentHand == null)
+                throw new InvalidOperationException("A hand null, de meg lett hívva a DealHoleCards függvény!");
 
+            CurrentHand.DealHoleCards(Players);
+        }
         public Player GetNextPlayer(Guid lastPlayerId, bool includeAllIn = false)
         {
             // Rendezzük a játékosokat seat szerint növekvő sorrendbe
@@ -112,11 +113,6 @@ namespace Backend.Domain.Entities
 
             return nextPlayer; ;
         }
-
-        public void SetCurrentPlayerToPivot(Guid playerId)
-        {
-            CurrentHand!.PivotPlayerId = playerId;
-        }
         public void SetPreviousPlayerToPivot(Guid playerId)
         {
             // Csak azokat a játékosokat vesszük figyelembe, akik waiting státuszban vannak,
@@ -140,41 +136,8 @@ namespace Backend.Domain.Entities
             // A hand pivot játékosának beállítása
             CurrentHand!.PivotPlayerId = prevPlayer.Id;
         }
-
         public int GetActivePlayersCount() => Players.Count(p => p.PlayerStatus != PlayerStatus.Lost && p.PlayerStatus != PlayerStatus.Folded);
         public int GetWaitingPlayersCount() => Players.Count(p => p.PlayerStatus == PlayerStatus.Waiting);
-        //public bool IsNextPlayerPivot()
-        //{
-        //    try
-        //    {
-        //        var sortedPlayers = Players.OrderBy(p => p.Seat).ToList();
-
-        //        // Keressük meg a lastPlayer-t a rendezett listában
-        //        var lastPlayer = sortedPlayers.FirstOrDefault(p => p.Id == CurrentHand!.CurrentPlayerId)
-        //                         ?? throw new ArgumentException("A soron lévő játékos nincsen a playerek között");
-
-        //        Player? nextPlayer;
-
-        //        var maxSeat = sortedPlayers.Last().Seat;
-        //        for (int i = lastPlayer.Seat; i <= maxSeat; i++)
-        //        {
-        //            var nextSeat = (i + 1) % (maxSeat + 1);
-        //            nextPlayer = sortedPlayers.FirstOrDefault(p => p.Seat == nextSeat);
-        //            if (nextPlayer is null)
-        //                continue;
-        //            if (nextPlayer.Id == CurrentHand!.PivotPlayerId)
-        //                return true;
-        //            if (nextPlayer.PlayerStatus == PlayerStatus.Waiting)
-        //                return false;
-        //        }
-        //        throw new Exception("Nincs pivot játékos");
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine(ex.Message);
-        //        throw new Exception(ex.Message);
-        //    }
-        //}
         public bool IsNextPlayerPivot()
         {
             try
@@ -214,10 +177,9 @@ namespace Backend.Domain.Entities
             return firstPlayer.Id;
         }
         public Guid GetCurrentPlayersId()
-        {
-            return CurrentHand!.CurrentPlayerId;
-
-        }
+            => CurrentHand!.CurrentPlayerId;
+        public void SetCurrentPlayerToPivot(Guid playerId)
+            => CurrentHand!.PivotPlayerId = playerId;
     }
 
     public enum GameStatus

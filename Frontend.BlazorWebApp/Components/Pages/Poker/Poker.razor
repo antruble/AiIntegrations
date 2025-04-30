@@ -1,14 +1,9 @@
-﻿@page "/poker/game"
+﻿@page "/poker/game/{gameId:guid}"
 @using Frontend.BlazorWebApp.Components.Pages.Poker.Components
 @using Frontend.BlazorWebApp.StateServices
 @using Frontend.BlazorWebApp.Engines
 @using Backend.Shared.Models.Poker
-@* @using Backend.Poker.Domain.Entities
-@using Frontend.WebAssembly.Poker.Components.Pages.Poker.Components
-@using Frontend.WebAssembly.Poker.Components.Layout
-@using Frontend.WebAssembly.Poker.Engine
-@using Frontend.WebAssembly.Poker.Services
- *@
+
 @rendermode InteractiveServer
 
 
@@ -40,7 +35,7 @@ else
         GetSuitSymbol="GetSuitSymbol" />
 
         @if (GameState.CurrentGame.CurrentGameAction == GameAction.PlayerAction
-            && _engine.GetUserId() == GameState.CurrentGame.CurrentHand.CurrentPlayerId)
+           && _engine.GetUserId() == GameState.CurrentGame.CurrentHand.CurrentPlayerId)
         {
             <div class="w-100 mt-5 d-flex justify-content-center" style="position: absolute; bottom:0; left; 0;">
                 <ActionToolbar
@@ -55,6 +50,9 @@ else
 }
 
 @code {
+    [Parameter]
+    public Guid gameId { get; set; }
+
     private bool _engineStarted = false;
     private bool isLoading = true, hasError = false;
     private PokerGameEngine? _engine;
@@ -62,6 +60,12 @@ else
                              .Players?
                              .FirstOrDefault(p => p.Id == _engine?.GetUserId())?
                              .Chips ?? 0;
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadGame();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -77,6 +81,28 @@ else
     private void Fold() => _engine!.RecordPlayerAction(new PlayerActionDto(PlayerActionType.Fold, null, DateTime.UtcNow));
     private void Call() => _engine!.RecordPlayerAction(new PlayerActionDto(PlayerActionType.Call, null, DateTime.UtcNow));
     private void Raise(int amount) => _engine!.RecordPlayerAction(new PlayerActionDto(PlayerActionType.Raise, amount, DateTime.UtcNow));
+
+    private async Task LoadGame()
+    {
+        try
+        {
+            var client = HttpFactory.CreateClient("PokerClient");
+            var game = await client.GetFromJsonAsync<GameDto>($"getgamebyid/{gameId}");
+            if (game == null)
+            {
+                throw new InvalidOperationException("Nem található a kért játék.");
+            }
+
+            // Frissítjük a GameState-et, ha szükséges
+            GameState.UpdateGame(game);
+        }
+        catch
+        {
+            await Task.Delay(1500);
+            NavManager.NavigateTo("/poker");
+        }
+    }
+
     private async Task HintAsync()
     {
         if (_engine is null) return;
@@ -92,10 +118,10 @@ else
         var engineLogger = LoggerFactory.CreateLogger<PokerGameEngine>();
         if (GameState.CurrentGame is null)
         {
-            throw new Exception("NULL");
+            await LoadGame();
         }
         _engine = new PokerGameEngine(GameState.CurrentGame, HttpFactory, engineLogger, StateHasChanged, GameState);
-        await _engine.InitAsync(CancellationToken.None);
+        // await _engine.InitAsync(CancellationToken.None);
         _engine.Start();
         isLoading = false;
     }

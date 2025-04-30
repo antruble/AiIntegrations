@@ -47,14 +47,6 @@ namespace Frontend.BlazorWebApp.Engines
 
         #region     Game loop methods
 
-        public async Task InitAsync(CancellationToken token)
-        {
-            //var http = _httpClientFactory.CreateClient("PokerClient");
-            //_game = await http.GetFromJsonAsync<Game>($"getgame", token)
-            //        ?? throw new InvalidOperationException("A játék betöltése sikertelen.");
-            UserId = GetUserId();
-        }
-
         public void Start()
         {
             if (_gameLoopCts is not null)
@@ -62,7 +54,10 @@ namespace Frontend.BlazorWebApp.Engines
 
             _logger.LogInformation($"Engine elindítva..");
             _gameLoopCts = new CancellationTokenSource();
+            UserId = GetUserId();
+
             _ = GameLoopAsync(_gameLoopCts.Token);
+
         }
         public async Task StopAsync()
         {
@@ -382,7 +377,26 @@ namespace Frontend.BlazorWebApp.Engines
         public Guid GetCurrentPlayersId() =>
                 _game.CurrentHand!.CurrentPlayerId;
 
-        public Guid GetUserId() { return _game.Players.First(p => !p.IsBot).Id; }
+        public Guid GetUserId()
+        {
+            if (_game.Players == null || !_game.Players.Any())
+            {
+                // sínkron blokkolással hívjuk le (ugyanitt async verzió is elképzelhető)
+                var client = _httpClientFactory.CreateClient("PokerClient");
+                var game = client
+                    .GetFromJsonAsync<GameDto>($"getgamebyid/{_game.Id}")
+                    .GetAwaiter().GetResult();
+
+                if (game == null || game.Players == null || !game.Players.Any())
+                    throw new InvalidOperationException($"Nem található játék vagy játékosok a szerveren. gameId={_game.Id}");
+
+                //_game.Players = game.Players;
+            }
+
+            var user = _game.Players.FirstOrDefault(p => !p.IsBot)
+                       ?? throw new InvalidOperationException("Nincs emberi játékos a játékban.");
+            return user.Id;
+        }
 
         #endregion
 

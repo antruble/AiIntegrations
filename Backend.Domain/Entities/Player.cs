@@ -53,6 +53,7 @@ namespace Backend.Domain.Entities
         }
         public void AddChips(int amount) => Chips += amount;
         public void ResetHoleCards() => HoleCards = new List<Card>();
+        public void ResetChips() => Chips = 2000;
         public void HandleAction(PlayerAction action)
         {
             switch (action.ActionType)

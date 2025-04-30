@@ -29,6 +29,7 @@ namespace Backend.Domain.Entities
         public Guid PivotPlayerId { get; set; }
         public Guid CurrentPlayerId { get; set; }
         public bool SkipActions { get; set; } = false;
+        public int BigBlindAmount { get; set; }
 
         [NotMapped]
         public Dictionary<Guid, double> Odds { get; set; }
@@ -38,7 +39,7 @@ namespace Backend.Domain.Entities
         public Deck Deck { get; private set; }
 
         protected Hand() { }
-        public Hand(Player currentPlayer)
+        public Hand(Player currentPlayer, int bigBlindAmount = 200)
         {
             Id = Guid.NewGuid();
             Deck = new Deck();
@@ -47,12 +48,13 @@ namespace Backend.Domain.Entities
             PivotPlayerId = currentPlayer.Id;
             HandStatus = HandStatus.Preflop;
             CommunityCards = [];
+            BigBlindAmount = bigBlindAmount;
         }
 
         [JsonConstructor]
-        public Hand(Guid id, List<Card> communityCards, HandStatus handStatus, Pot pot, bool skipActions, Dictionary<Guid, double> odds)
+        public Hand(Guid id, List<Card> communityCards, HandStatus handStatus, Pot pot, bool skipActions, Dictionary<Guid, double> odds, int bigBlindAmount)
         {
-            (Id, CommunityCards, HandStatus, Pot, SkipActions, Odds) = (id, communityCards, handStatus, pot, skipActions, odds);
+            (Id, CommunityCards, HandStatus, Pot, SkipActions, Odds, BigBlindAmount) = (id, communityCards, handStatus, pot, skipActions, odds, bigBlindAmount);
         }
 
         public void DealHoleCards(IList<Player> players)

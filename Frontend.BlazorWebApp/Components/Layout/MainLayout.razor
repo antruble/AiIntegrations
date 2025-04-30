@@ -1,11 +1,71 @@
 ﻿@inherits LayoutComponentBase
 @inject NavigationManager NavigationManager
 
-<div class="page" style="background-color: #2d3436;
+<style>
+    .btn-go-back {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #ffffff;
+        color: #000000;
+        text-align: center;
+        width: 8rem; /* 48 * 0.25rem */
+        height: 2rem; /* 14 * 0.25rem */
+        position: relative;
+        font-size: 1rem; /* text-xl */
+        font-weight: 600; /* font-semibold */
+        border: none;
+        border-radius: 1.5rem; /* rounded-2xl */
+        cursor: pointer;
+        overflow: hidden;
+        padding: 0; /* nincs extra padding */
+        text-decoration: none;
+    }
+
+    /* Az ikon tartó div */
+    .btn-go-back-icon {
+        background-color: #68D391; /* Tailwind green-400 */
+        border-radius: 0.75rem; /* rounded-xl */
+        height: 1.5rem; /* h-12 */
+        width: 25%; /* w-1/4 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        left: 0.25rem; /* left-1 */
+        top: 4px; /* top-[4px] */
+        z-index: 10;
+        transition: width 0.5s ease;
+    }
+
+    /* Hover-kor szétnyílik az ikonos sáv */
+    .btn-go-back:hover .btn-go-back-icon {
+        width: 120px; /* group-hover:w-[184px] */
+    }
+
+    /* A gomb szövege */
+    .btn-go-back-text {
+        display: inline-block;
+        transform: translateX(0.5rem); /* translate-x-2 */
+        vertical-align: middle;
+    }
+
+    .layout-header{
+        top: 1rem;
+        left: 1rem;
+    }
+</style>
+<div class="page position-relative" style="background-color: #2d3436;
 background-image: linear-gradient(315deg, #2d3436 0%, #3B3B3B 74%);">
-    <header class="layout-header">
-        <a href="/" class="return-button" @onclick="async () => await NavigateHome()">
-            <i class="fas fa-arrow-left"></i> Vissza
+    <header class="layout-header position-absolute">
+        <a href="/" class="btn-go-back" @onclick="async () => await NavigateHome()">
+            <div class="btn-go-back-icon ">
+
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-house" viewBox="0 0 16 16">
+                    <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5z" />
+                </svg>
+            </div>
+            <span class="btn-go-back-text">home</span>
         </a>
     </header>
     <main>

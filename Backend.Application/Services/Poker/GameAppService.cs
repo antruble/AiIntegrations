@@ -94,6 +94,7 @@ namespace Backend.Application.Services.Poker
                 game.CurrentGameAction = GameActions.PlayerAction;
             else
                 game.CurrentGameAction = GameActions.DealNextRound;
+            await _unitOfWork.Games.SaveChangesAsync();
             await _unitOfWork.SaveChangesAsync();
         }
         public async Task<Game> ProcessActionAsync(Game game, Player player, PlayerAction action)
@@ -287,20 +288,21 @@ namespace Backend.Application.Services.Poker
             {
                 case PlayerActionType.Fold:
                     player.Fold();
-                    var activePlayerCount = game.Players.Count(p => p.PlayerStatus == PlayerStatus.Waiting);
-                    if (activePlayerCount < 2)
+                    var nonFoldedPlayerCount = game.Players.Count(p => p.PlayerStatus == PlayerStatus.Waiting || p.PlayerStatus == PlayerStatus.AllIn);
+                    if (nonFoldedPlayerCount == 1)
                     {
-                        var nonFoldedPlayerCount = game.Players.Count(p => p.PlayerStatus == PlayerStatus.Waiting || p.PlayerStatus == PlayerStatus.AllIn);
-                        if (nonFoldedPlayerCount == 1)
-                        {
-                            await CompleteHandAndSaveWinnersAsync(game);
-                            game.CurrentGameAction = GameActions.ShowOff;
-                        }
-                        else if (nonFoldedPlayerCount > 1)
-                        {
-                            game.CurrentHand!.SkipActions = true;
-                        }
+                        await CompleteHandAndSaveWinnersAsync(game);
+                        game.CurrentGameAction = GameActions.ShowOff;
+                        break;
                     }
+
+                    if (!game.Players.Any(p => p.Seat > player.Seat && p.PlayerStatus == PlayerStatus.Waiting))
+                    {
+                        var waitingPlayerCount = game.Players.Count(p => p.PlayerStatus == PlayerStatus.Waiting);
+                        if (waitingPlayerCount <= 1)
+                            game.CurrentHand!.SkipActions = true;
+                    }
+
                     break;
                 case PlayerActionType.Call:
                     HandleCallAction(game, player);

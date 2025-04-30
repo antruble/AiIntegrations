@@ -6,56 +6,55 @@
 @rendermode InteractiveServer
 
 @inject IHttpClientFactory HttpFactory
-@inject GameStateService GameState
-@inject NavigationManager NavigationManager
+@inject NavigationManager NavManager
 
 <style>
     /* A kártya méretezése és lekerekítése */
     .new-game-card {
-        width: 100%;
-        max-width: 400px;
-        border: none;
-        border-radius: 0.75rem;
-        overflow: hidden;
+    width: 100%;
+    max-width: 400px;
+    border: none;
+    border-radius: 0.75rem;
+    overflow: hidden;
     }
 
     /* Ugyanaz a gradiens, mint a layout headerében */
     .header-gradient {
-        background-image: linear-gradient(315deg, #2d3436 0%, #3B3B3B 74%);
-        padding: 1rem 1.5rem;
+    background-image: linear-gradient(315deg, #2d3436 0%, #3B3B3B 74%);
+    padding: 1rem 1.5rem;
     }
 
     /* Form mezők nagyobb, lekerekített inputok */
     .form-control-lg {
-        padding: 0.75rem 1rem;
-        border-radius: 2rem;
+    padding: 0.75rem 1rem;
+    border-radius: 2rem;
     }
 
     /* Indító gomb extra padding és hover effekt */
     .btn-start {
-        width: 100%;
-        transition: background-color 0.2s ease, transform 0.1s ease;
+    width: 100%;
+    transition: background-color 0.2s ease, transform 0.1s ease;
     }
 
-        .btn-start:hover:not(:disabled) {
-            background-color: #2d3436;
-            color: #fff;
-            transform: translateY(-1px);
-        }
+    .btn-start:hover:not(:disabled) {
+    background-color: #2d3436;
+    color: #fff;
+    transform: translateY(-1px);
+    }
 
     /* ValidationSummary és hibaszöveg finomhangolás */
     .validation-summary-valid ul {
-        list-style-type: none;
-        padding-left: 0;
+    list-style-type: none;
+    padding-left: 0;
     }
 
     .text-danger {
-        font-size: 0.9rem;
+    font-size: 0.9rem;
     }
 
     /* Spinner és szöveg távolsága */
     .spinner-border {
-        vertical-align: text-bottom;
+    vertical-align: text-bottom;
     }
 
 </style>
@@ -69,9 +68,9 @@
 
             <div class="card-body">
                 <EditForm Model="model"
-                          OnValidSubmit="CreateGame"
-                          class="d-flex flex-column"
-                          FormName="newGameForm">
+                OnValidSubmit="CreateGame"
+                class="d-flex flex-column"
+                FormName="newGameForm">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
 
@@ -80,8 +79,8 @@
                             Játékos neve
                         </label>
                         <InputText id="playerName"
-                                   @bind-Value="model.PlayerName"
-                                   class="form-control form-control-lg rounded-pill" />
+                        @bind-Value="model.PlayerName"
+                        class="form-control form-control-lg rounded-pill" />
                     </div>
 
                     <div class="mb-4">
@@ -89,14 +88,14 @@
                             Botok száma
                         </label>
                         <InputNumber id="numBots"
-                                     @bind-Value="model.NumBots"
-                                     class="form-control form-control-lg rounded-pill"
-                                     min="1" />
+                        @bind-Value="model.NumBots"
+                        class="form-control form-control-lg rounded-pill"
+                        min="1" />
                     </div>
 
                     <button type="submit"
-                            class="btn btn-primary btn-start rounded-pill py-2 mt-2"
-                            disabled="@isCreating">
+                    class="btn btn-primary btn-start rounded-pill py-2 mt-2"
+                    disabled="@isCreating">
                         @if (isCreating)
                         {
                             <span class="spinner-border spinner-border-sm me-2"></span>
@@ -118,7 +117,6 @@
     </div>
 </div>
 @code {
-    // 1) A form modellje
     private NewGameModel model = new();
     private bool isCreating;
     private string? error;
@@ -141,12 +139,9 @@
             var response = await client.PostAsJsonAsync("newgame", request);
             response.EnsureSuccessStatusCode();
 
-            var game = await response.Content.ReadFromJsonAsync<GameDto>()
-                       ?? throw new InvalidOperationException("Üres válasz a szerverről.");
+            var gameId = await response.Content.ReadFromJsonAsync<Guid>();
 
-            GameState.UpdateGame(game);
-
-            NavigationManager.NavigateTo($"/poker/game");
+            NavManager.NavigateTo($"/poker/game/{gameId}");
         }
         catch (Exception ex)
         {

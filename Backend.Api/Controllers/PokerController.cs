@@ -43,10 +43,10 @@ namespace Backend.Api.Controllers
             }
 
             var game = await _gameService.StartNewGameAsync(request.NumOfBots, request.PlayerName);
-            return Ok(game);
+            return Ok(game.Id);
         }
 
-        [HttpGet("getgamebyid")]
+        [HttpGet("getgamebyid/{gameId:guid}")]
         public async Task<IActionResult> GetGameById(Guid gameId)
         {
             var game = await _gameService.GetGameByIdAsync(gameId);
