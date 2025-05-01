@@ -298,6 +298,9 @@ namespace Frontend.BlazorWebApp.Engines
                 _logger.LogInformation($"PlayerAction: a játékos action-je: {action.ActionType} érték: {action.Amount}");
                 var http = _httpClientFactory.CreateClient("PokerClient");
                 await http.PostAsJsonAsync($"processaction?gameId={_game.Id}&playerId={UserId}", action, token);
+                _gameStateService.ClearHint();
+
+
             }
             catch (Exception ex)
             {
@@ -335,13 +338,10 @@ namespace Frontend.BlazorWebApp.Engines
 
         public async Task RequestHintAsync()
         {
-            // 1) Töröljük az esetleges korábbi hintet
             _gameStateService.ClearHint();
 
-            // 2) HTTP client lekérése
             var client = _httpClientFactory.CreateClient("PokerClient");
 
-            // 3) Odds lekérése az _game példányból
             double oddsValue = 0.0;
             if (_game.CurrentHand?.Odds != null
                 && _game.CurrentHand.Odds.TryGetValue(UserId, out var retrievedOdds))
@@ -349,11 +349,9 @@ namespace Frontend.BlazorWebApp.Engines
                 oddsValue = retrievedOdds;
             }
 
-            // 4) GET kérés a query paraméterekkel
             var url = $"gethint?gameId={_game.Id}&playerId={UserId}&odds={oddsValue}";
             _logger.LogInformation($"Hint kérése: {url}");
 
-            // 5) JSON parse azonnal HintResponse-ba
             var hintResp = await client.GetFromJsonAsync<HintResponse>(url)
                 ?? throw new InvalidOperationException("HintResponse deserializálása sikertelen.");
 
@@ -365,8 +363,9 @@ namespace Frontend.BlazorWebApp.Engines
         private async Task UpdateGameAsync(CancellationToken token)
         {
             var http = _httpClientFactory.CreateClient("PokerClient");
-            _game = await http.GetFromJsonAsync<GameDto>($"getgame?gameId={_game.Id}", token)
-                   ?? throw new InvalidOperationException($"Null a game a UpdateGameStateAsync-ban");
+            _game = await http
+                    .GetFromJsonAsync<GameDto>($"getgamebyid/{_game.Id}", token)
+                    ?? throw new InvalidOperationException($"Null a game a UpdateGameStateAsync-ban");
 
             _gameStateService.UpdateGame(_game);
             _stateHasChangedCallback?.Invoke();

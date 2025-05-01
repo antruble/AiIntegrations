@@ -15,7 +15,6 @@ namespace Backend.Application.Interfaces.Poker
         Task StartNewHandAsync(Guid gameId);
         Task CardsDealingActionFinished(Guid gameId);
         Task<Game> ProcessActionAsync(Game game, Player player, PlayerAction action);
-        //Task<Game> DealNextRound(Guid gameId);
         Task<Game> DealNextRound(Game game);
         Task<Game> SetGameActionShowOff(Game game);
         Task<List<Winner>> GetWinners(Guid handId);

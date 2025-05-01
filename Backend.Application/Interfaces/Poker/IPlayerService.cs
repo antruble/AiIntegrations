@@ -12,7 +12,6 @@ namespace Backend.Application.Interfaces.Poker
         Task<IList<Player>> GetPlayersAsync(int numOfBots, string playerName = "Player");
         Task<Guid> GetUserIdAsync(Guid gameId);
         Task<Player> GetPlayerByIdAsync(Guid playerId);
-        //Task SetBlindsAsync(IList<Player> players);
 
     }
 }

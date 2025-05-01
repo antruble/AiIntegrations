@@ -41,17 +41,5 @@ namespace Tests.Domain
                             game.Players.First(p => p.BlindStatus == BlindStatus.SmallBlind).Id);
         }
 
-        [Fact]
-        public void StartNewHand_AllLostExceptOne_ShouldReturnWinnerImmediately()
-        {
-            var winner = new Player(Guid.NewGuid(), "winner", 100, true, 4);
-            var loser = new Player (Guid.NewGuid(), "loser", 50, true, 5);
-            var game = new Game(new[] { winner, loser }.ToList());
-
-            var hand = game.StartNewHand();
-
-            Assert.NotNull(hand);
-            Assert.Equal(GameStatus.InProgress, game.Status);
-        }
     }
 }

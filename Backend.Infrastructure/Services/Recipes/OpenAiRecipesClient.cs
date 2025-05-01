@@ -40,11 +40,11 @@ namespace Backend.Infrastructure.Services.Recipes
         protected override string GetUserPrompt(RecipeRequestDto req)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Felhasználói recept kérés:");
-            sb.AppendLine("Leírás: " + req.Description);
+            sb.AppendLine("User's recipe request:");
+            sb.AppendLine("Description: " + req.Description);
             if (req.Ingredients != null && req.Ingredients.Count > 0)
             {
-                sb.Append("Elérhető hozzávalók: ");
+                sb.Append("Avaliable ingredients: ");
                 sb.AppendLine(string.Join(", ", req.Ingredients));
             }
             return sb.ToString();

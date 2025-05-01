@@ -10,17 +10,12 @@ namespace Backend.Application.Services.DocumentSummary
 {
     public class DocumentSummaryAppService : IDocumentSummaryService
     {
-        // <summary>
-        /// Kinyeri a feltöltött fájl szöveges tartalmát.
-        /// Támogatott kiterjesztések: .txt, .pdf és .doc.
-        /// </summary>
         public async Task<string> ExtractTextAsync(IFormFile file)
         {
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
 
             if (extension == ".txt")
             {
-                // TXT esetén simple szövegfájl beolvasás
                 using (var stream = file.OpenReadStream())
                 using (var reader = new StreamReader(stream))
                 {
@@ -29,7 +24,6 @@ namespace Backend.Application.Services.DocumentSummary
             }
             else if (extension == ".pdf")
             {
-                // PDF esetén a PdfPig könyvtár segítségével nyerjük ki a szöveget
                 using (var stream = file.OpenReadStream())
                 {
                     using (var pdf = PdfDocument.Open(stream))

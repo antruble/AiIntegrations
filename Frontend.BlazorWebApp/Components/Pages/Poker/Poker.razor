@@ -21,8 +21,10 @@ else
 {
     @if (!string.IsNullOrEmpty(GameState.CurrentHint))
     {
-        <div class="alert alert-info mt-2">
-            <strong>Tanács:</strong> @GameState.CurrentHint
+        <div class="position-absolute top-0 start-0 w-100 d-flex justify-content-center">
+            <div class="alert alert-info mt-2 w-50">
+                <strong>Hint:</strong> @GameState.CurrentHint
+            </div>
         </div>
     }
 

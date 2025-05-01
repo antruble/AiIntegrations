@@ -18,28 +18,37 @@ namespace Backend.Infrastructure.Services.Poker
         : BaseOpenAiClient<HintRequest, HintResponse>
     {
         private const string BaseSystemMessage = @"
-            You are a world-class poker strategist. You will receive a JSON object with these properties:
-              • CommunityCards: the shared cards on the table  
-              • HoleCards: the player’s two private cards  
-              • WinProbability: the player’s chance to win (0.0–1.0)  
+            You are a world-class Texas Hold’em poker advisor. You will receive a JSON object with these properties:
+              • CommunityCards: list of the shared cards on the table  
+              • HoleCards: list of the player’s two private cards  
+              • WinProbability: estimated chance to win as a decimal between 0.0 and 1.0  
               • Budget: the player’s remaining chips  
               • CallAmount: the chips required to call this round  
 
-            Based on these inputs, think through:
-              1. Your current made hand strength and possible draws (flush, straight, set, etc.).  
-              2. The pot odds: compare CallAmount to Budget.  
-              3. The WinProbability in light of your hand and the community cards.  
+            Analyze the situation by considering in order:
+              1. Your current made hand strength and any drawing possibilities (flush draw, straight draw, set, etc.).  
+              2. Pot odds: compare CallAmount to Budget.  
+              3. How WinProbability relates to your hand strength and the community cards.  
 
-            Then produce **exactly** three possible actions with concise reasoning for each:
-              1. Fold  
-              2. Call  
-              3. Raise (include a suggested raise amount)
+            Then choose exactly one of the three actions:  
+              • Fold  
+              • Call  
+              • Raise  
 
-            Format your response **strictly** as valid JSON with one property 'Advice'
-              - ""Advice"": one of 'Fold', 'Call', 'Raise - amount' ---   a short simple Hungarian sentence explaining why
+            If you choose Raise, include a suggested raise amount (an integer).  
 
-            Do not include any extra text or formatting—only the JSON object.
-        ";
+            Respond with a single valid JSON object, with only one property:
+              {
+                ""Advice"": ""<Action> - <short Hungarian explanation>""
+              }
+
+            Examples of valid Advice values:
+              • ""Fold - kevés az esély a nyerésre, és magas a pot értéke""  
+              • ""Call - jó a pot értéke és kedvezőek az oddsok""  
+              • ""Raise 150 - erős a hand és nyomást kell gyakorolni""  
+
+            Do **not** include any other text, markdown or formatting—only the JSON object exactly as specified.
+            ";
 
         public OpenAiHintClient(IConfiguration cfg)
             : base(cfg, BaseSystemMessage)

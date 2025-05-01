@@ -40,19 +40,15 @@ namespace Backend.Shared.Models.Poker
                 if (ActionsHistory == null || ActionsHistory.Count == 0)
                     return null;
 
-                // Ha nincs fold és legalább két akció van, akkor összesítünk
                 var hasFold = ActionsHistory.Any(a => a.ActionType == PlayerActionType.Fold);
                 if (!hasFold && ActionsHistory.Count > 1)
                 {
-                    // csak azoknak az akcióknak az Amount-ját adjuk össze, ahol van érték
                     var totalAmount = ActionsHistory
                         .Where(a => a.Amount.HasValue)
                         .Sum(a => a.Amount!.Value);
 
-                    // a legvégső timestamp
                     var lastTs = ActionsHistory.Max(a => a.Timestamp);
 
-                    // új, összegzett akció
                     return new PlayerActionDto(
                         PlayerActionType.Raise,
                         totalAmount,
@@ -60,7 +56,6 @@ namespace Backend.Shared.Models.Poker
                     );
                 }
 
-                // különben egyszerűen a legutóbbi akció
                 return ActionsHistory
                     .OrderByDescending(a => a.Timestamp)
                     .First();

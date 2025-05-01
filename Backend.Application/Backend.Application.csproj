@@ -15,11 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Interfaces\Recipes\" />
-    <Folder Include="Services\Recipes\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Backend.Domain\Backend.Domain.csproj" />
     <ProjectReference Include="..\Backend.Shared\Backend.Shared.csproj" />
   </ItemGroup>
