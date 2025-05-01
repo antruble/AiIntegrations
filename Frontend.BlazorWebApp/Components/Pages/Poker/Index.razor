@@ -90,7 +90,8 @@
                         <InputNumber id="numBots"
                         @bind-Value="model.NumBots"
                         class="form-control form-control-lg rounded-pill"
-                        min="1" />
+                        min="1"
+                        max="5"/>
                     </div>
 
                     <button type="submit"
@@ -155,10 +156,11 @@
 
     public class NewGameModel
     {
-        [Required]
+        [Required(ErrorMessage = "A játékos neve megadása kötelező!")]
+        [MaxLength(8, ErrorMessage = "A név maximum 8 karakter hosszú lehet!")]
         public string PlayerName { get; set; } = "Player";
 
-        [Range(1, 10, ErrorMessage = "Legalább 1 bot kell.")]
+        [Range(1, 5, ErrorMessage = "Botok száma minimum 1, és maximum 5 lehet!")]
         public int NumBots { get; set; } = 5;
     }
 }

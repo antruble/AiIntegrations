@@ -7,7 +7,34 @@
 
 @inject IHttpClientFactory HttpFactory
 
+@if ((recipes == null || !recipes.Any()) && isProcessing)
+{
+    <div class="position-absolute top-0 start-0 end-0 bottom-0 d-flex justify-content-center align-items-center" style="background-color: rgb(255, 255, 255, 0.5); z-index: 999;">
+        <ProcessingSpinner />
+    </div>
+}
+
 <div class="container bg-white vh-100 align-items-center flex-column">
+    @if (showErrorModal)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Hiba</h5>
+                        <button type="button" class="btn-close" @onclick="() => showErrorModal = false"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>@errorMessage</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @onclick="() => showErrorModal = false">Bezár</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
     <header class="w-100 d-flex justify-content-center pt-2">
         <div class="px-4" style="border-bottom: 1px solid #C5C5C5">
             <h3 class="text-center">Receptajánló AI segítségével</h3>
@@ -37,8 +64,12 @@
 </div>
 
 @code {
+    private bool isProcessing = false;
     private string recipeDescription = "";
     private List<string> ingredients = new();
+    private bool showErrorModal = false;
+    private string errorMessage = "";
+
 
     private IReadOnlyList<RecipeSuggestionDto>? recipes;
     private RecipeSuggestionDto? selectedRecipe;
@@ -53,6 +84,8 @@
     private async Task GetRecipes()
     {
         if (_http == null) return;
+
+        isProcessing = true;
 
         var request = new RecipeRequestDto(recipeDescription, ingredients);
 
@@ -70,13 +103,26 @@
             }
             else
             {
+                var serverMsg = await resp.Content.ReadAsStringAsync();
+                ThrowError(serverMsg ?? "Ismeretlen hiba a szerveren.");
                 Console.Error.WriteLine($"Hiba: {resp.ReasonPhrase}");
             }
         }
         catch (Exception ex)
         {
+            ThrowError($"Hiba a lekérés során: {ex.Message}");
             Console.Error.WriteLine($"Kivétel a lekérés során: {ex.Message}");
         }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private void ThrowError(string msg)
+    {
+        errorMessage = msg;
+        showErrorModal = true;
     }
 
     private void SelectRecipe(RecipeSuggestionDto r)

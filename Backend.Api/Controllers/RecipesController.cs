@@ -18,13 +18,6 @@ namespace Backend.Api.Controllers
         {
             _openAiRecipesClient = openAiRecipesClient;
         }
-        /// <summary>
-        /// Recepteket generáló végpont.
-        /// A kérés tartalmazza a recept leírást és a rendelkezésre álló hozzávalókat.
-        /// Az AI számára előkészíti a promptot, majd visszaadja a generált recept ajánlásokat.
-        /// </summary>
-        /// <param name="request">A felhasználó által megadott paraméterek (leírás, hozzávalók)</param>
-        /// <returns>A generált receptek listája</returns>
         [HttpPost("generate")]
         public async Task<IActionResult> GenerateRecipes([FromBody] RecipeRequestDto request)
         {
@@ -33,7 +26,6 @@ namespace Backend.Api.Controllers
                 return BadRequest("A recept leírása kötelező.");
             }
 
-            // Hívjuk az új kliens metódusát, amely elküldi a promptot az OpenAI API-nak.
             var aiResponse = await _openAiRecipesClient.ExecuteAsync(request)
                 ?? throw new Exception();
 

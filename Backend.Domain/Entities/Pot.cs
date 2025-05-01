@@ -23,8 +23,6 @@ namespace Backend.Domain.Entities
             Contributions = contributions;
             SidePots = sidePots;
         }
-
-        // Ha szükséges egy parameterless konstruktor is:
         public Pot() { }
         public void AddContribution(Guid playerId, int amount)
         {
@@ -37,13 +35,10 @@ namespace Backend.Domain.Entities
         }
         public int GetCallAmountForPlayer(Guid playerId)
         {
-            // Ha még nincs hozzájárulás, akkor 0-t veszünk alapul
             int playerContribution = Contributions.FirstOrDefault(pc => pc.PlayerId == playerId)?.Amount ?? 0;
 
-            // Meghatározzuk a legnagyobb befizetést a jelenlegi roundben
             int maxContribution = Contributions.Any() ? Contributions.Max(pc => pc.Amount) : 0;
 
-            // A call összeg a különbség a legmagasabb és az adott játékos által befizetett összeg között
             int callAmount = maxContribution - playerContribution;
 
             if (callAmount < 0)
@@ -55,10 +50,8 @@ namespace Backend.Domain.Entities
         {
             MainPot += CurrentRoundPot;
             CurrentRoundPot = 0;
-            // Itt lehet side pot logikát is beépíteni, ha all-in esetek merülnek fel
         }
 
-        // Metódus a side pot hozzáadásához, módosításához, stb.
         public void AddSidePot(int amount, List<Guid> eligiblePlayers)
         {
             SidePots.Add(new SidePot(amount, eligiblePlayers));
@@ -66,34 +59,24 @@ namespace Backend.Domain.Entities
 
         public void CreateSidePots()
         {
-            // Rendezés a hozzájárulások szerint (növekvő)
             var sortedContributions = Contributions.OrderBy(pc => pc.Amount).ToList();
             if (sortedContributions.Count == 0)
                 return;
-            // A fő pot már a legalacsonyabb összeggel került kialakításra:
+            
             int baseAmount = sortedContributions.First().Amount;
 
-            // Minden játékosból levonjuk a baseAmount-et, így kapjuk meg a maradékot (extra tét)
             var extraContributions = sortedContributions
                 .Select(pc => new { pc.PlayerId, Extra = pc.Amount - baseAmount })
                 .ToList();
 
-            // Az első side pot: mindenki, aki extra befizetett (Extra > 0)
-            // A legalacsonyabb extra összeget vesszük alapul az extra tétekből.
             var eligibleForSidePot = extraContributions.Where(x => x.Extra > 0).ToList();
             if (!eligibleForSidePot.Any())
-            {
-                // Nincs side pot, mert senki nem fizetett extra tétet
                 return;
-            }
 
             int sidePotBase = eligibleForSidePot.Min(x => x.Extra);
-            // Az első side pot összege:
             int sidePotAmount = sidePotBase * eligibleForSidePot.Count;
-            // Hozzunk létre egy side potot, amelybe azok a játékosok kerülnek, akik extra tétet fizettek.
             AddSidePot(sidePotAmount, eligibleForSidePot.Select(x => x.PlayerId).ToList());
 
-            // Most csökkentsük az extra tétet minden érintett játékosnál:
             for (int i = 0; i < eligibleForSidePot.Count; i++)
             {
                 eligibleForSidePot[i] = new
@@ -103,14 +86,12 @@ namespace Backend.Domain.Entities
                 };
             }
 
-            // Ismételjük, ha maradt olyan extra, amelyből új side pot keletkezhet.
             while (eligibleForSidePot.Any(x => x.Extra > 0))
             {
                 var currentEligible = eligibleForSidePot.Where(x => x.Extra > 0).ToList();
                 int currentBase = currentEligible.Min(x => x.Extra);
                 int currentSidePot = currentBase * currentEligible.Count;
                 AddSidePot(currentSidePot, currentEligible.Select(x => x.PlayerId).ToList());
-                // Frissítjük a listát
                 eligibleForSidePot = currentEligible
                     .Select(x => new { x.PlayerId, Extra = x.Extra - currentBase })
                     .ToList();

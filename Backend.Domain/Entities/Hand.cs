@@ -24,7 +24,6 @@ namespace Backend.Domain.Entities
         public List<Card> CommunityCards { get; set; }
         public HandStatus HandStatus { get; private set; }
         public Pot Pot { get; private set; }
-        //public Guid CurrentPlayerId { get; set; }
         public Guid FirstPlayerId { get; set; }
         public Guid PivotPlayerId { get; set; }
         public Guid CurrentPlayerId { get; set; }
@@ -76,14 +75,6 @@ namespace Backend.Domain.Entities
             }
         }
 
-        /// <summary>
-        /// Váltás a következő fázisra a kézben.
-        /// A logika:
-        /// - Preflop fázisból: 3 közös lap (Flop) osztása, majd állapot Frissítése.
-        /// - Flop fázisból: 1 közös lap (Turn) osztása, majd állapot frissítése.
-        /// - Turn fázisból: 1 közös lap (River) osztása, majd állapot frissítése.
-        /// - River fázisból: a kéz befejeződik (Shutdown).
-        /// </summary>
         public void DealNextRound(Deck deck)
         {
             Deck = deck;
@@ -119,11 +110,6 @@ namespace Backend.Domain.Entities
 
         public void AddCommunityCard() => CommunityCards.Add(Deck.Draw());
 
-        /// <summary>
-        /// Lezárja a kezet és meghívja a showdown logikát a győztes(ek) meghatározásához.
-        /// </summary>
-        /// <param name="evaluator">Az értékelő, amely implementálja az IPokerHandEvaluator interfészt</param>
-        /// <returns>A kéz showdown eredménye, ami tartalmazza a győztes(ek) azonosítóit és a pot felosztását</returns>
         public HandEvaluationResult CompleteHand(IPokerHandEvaluator evaluator, IList<Player> players)
         {
             if (evaluator == null)

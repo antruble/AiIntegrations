@@ -34,11 +34,8 @@ namespace Backend.Application.Services.Poker
 
             // Player
             var playerSeat = 0;
-            //players.Add(
-            //    await _unitOfWork.Players.FindPlayerByName(playerName)
-            //                    ?? new Player(Guid.NewGuid(), playerName, 2000, false, playerSeat)
-            //);
             players.Add(new Player(Guid.NewGuid(), playerName, 2000, false, playerSeat));
+
             //Bots
             for (int i = 0; i < numOfBots; i++)
             {
@@ -49,11 +46,6 @@ namespace Backend.Application.Services.Poker
                 }
                 var botName = $"Bot{i}";
                 var bot = new Player(Guid.NewGuid(), botName, 2000, true, i);
-                //var bot = await _unitOfWork.Players.FindPlayerByName(botName)
-                //                    ?? new Player(Guid.NewGuid(), botName, 2000, true, i);
-
-                //bot.ResetPlayerAttributes();
-                //bot.ResetChips();
                 players.Add(
                     bot
                 );

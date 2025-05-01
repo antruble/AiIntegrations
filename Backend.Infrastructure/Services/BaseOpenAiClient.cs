@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 
 namespace Backend.Infrastructure.Services
 {
-    // Core.Infrastructure projektben
     public abstract class BaseOpenAiClient<TRequest, TResponse>
     : IOpenAiClient<TRequest, TResponse>
     {
@@ -39,13 +38,10 @@ namespace Backend.Infrastructure.Services
             return ParseResponse(result.Value.Content[0].Text);
         }
 
-        /// <summary>Beépíti a style-t vagy egyéb kiegészítést az alap rendszerüzenetbe</summary>
         protected abstract string BuildSystemMessage(TRequest request);
 
-        /// <summary>Az a rész, amit user-ként küldünk be</summary>
         protected abstract string GetUserPrompt(TRequest request);
 
-        /// <summary>JSON-ból visszaépíti a konkrét TResponse-t</summary>
         protected abstract TResponse ParseResponse(string json);
     }
 

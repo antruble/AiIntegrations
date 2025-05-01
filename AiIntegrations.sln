@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Frontend.BlazorWebApp", "Fr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backend.Shared", "Backend.Shared\Backend.Shared.csproj", "{15CF6B4A-A641-498F-BAAE-8E5D16C2042C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{41E4DD89-A9FA-45C5-8D66-549FCB4DF915}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{15CF6B4A-A641-498F-BAAE-8E5D16C2042C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{15CF6B4A-A641-498F-BAAE-8E5D16C2042C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{15CF6B4A-A641-498F-BAAE-8E5D16C2042C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{41E4DD89-A9FA-45C5-8D66-549FCB4DF915}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{41E4DD89-A9FA-45C5-8D66-549FCB4DF915}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{41E4DD89-A9FA-45C5-8D66-549FCB4DF915}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{41E4DD89-A9FA-45C5-8D66-549FCB4DF915}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

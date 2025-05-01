@@ -76,8 +76,14 @@
         <textarea id="recipeDescription"
                   class="form-control"
                   rows="3"
+                  maxlength="200"
                   placeholder="Írd le, milyen ételhez szeretnél receptet..."
-                  @bind="Description"></textarea>
+                  @bind="Description">
+        </textarea>
+        @if (!string.IsNullOrEmpty(descriptionError))
+        {
+            <div class="text-danger mt-1">@descriptionError</div>
+        }
     </div>
 
     <div class="mb-4">
@@ -96,6 +102,10 @@
                 Hozzáadás
             </button>
         </div>
+        @if (!string.IsNullOrEmpty(ingredientError))
+        {
+            <div class="text-danger mt-1">@ingredientError</div>
+        }
     </div>
 
     @if (Ingredients.Any())
@@ -135,13 +145,24 @@
 
     [Parameter] public EventCallback OnSearchClicked { get; set; }
 
+    private string descriptionError = "";
+    private string ingredientError = "";
+
     private async Task AddIngredient()
     {
+        ingredientError = "";
+        if (Ingredients.Count >= 10)
+        {
+            ingredientError = "Maximum 10 hozzávalót adhatsz meg!";
+            return;
+        }
+
         if (!string.IsNullOrWhiteSpace(NewIngredient))
         {
             Ingredients.Add(NewIngredient.Trim());
             NewIngredient = "";
             await IngredientsChanged.InvokeAsync(Ingredients);
+            await DescriptionChanged.InvokeAsync(Description);
         }
     }
 
@@ -153,6 +174,13 @@
 
     private async Task OnSearch()
     {
+        descriptionError = "";
+        if (string.IsNullOrWhiteSpace(Description))
+        {
+            descriptionError = "A recept leírásának megadása kötelező!";
+            return;
+        }
+
         await DescriptionChanged.InvokeAsync(Description);
         await OnSearchClicked.InvokeAsync();
     }

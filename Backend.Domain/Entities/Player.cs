@@ -39,6 +39,20 @@ namespace Backend.Domain.Entities
             BlindStatus = BlindStatus.None;
             PlayerStatus = PlayerStatus.Waiting;
         }
+        //konstruktor tesztelésheu
+        public Player(Guid id, string name, int chips, bool isBot, int seat, List<Card> holeCards)
+        {
+            Id = id;
+            Name = name;
+            Chips = chips;
+            IsBot = isBot;
+            HoleCards = holeCards;
+            ActionsHistory = new List<PlayerAction>();
+            Seat = seat;
+
+            BlindStatus = BlindStatus.None;
+            PlayerStatus = PlayerStatus.Waiting;
+        }
 
         [JsonConstructor]
         public Player(Guid id, string name, int chips, bool isBot, int seat, List<Card> holeCards, List<PlayerAction> actionsHistory)

@@ -26,8 +26,8 @@ namespace Backend.Api.Controllers
             {
                 return BadRequest("Fájl nem lett feltöltve.");
             }
+            var maxLength = 10000;
 
-            // Ellenőrizzük a fájl típusát
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
             if (extension != ".txt" && extension != ".pdf" && extension != ".doc" && extension != ".docx")
             {
@@ -35,6 +35,9 @@ namespace Backend.Api.Controllers
             }
 
             var extractedText = await _documentSummaryService.ExtractTextAsync(file);
+
+            if (extractedText.Length > maxLength)
+                return BadRequest($"A dokumentum túl hosszú: {extractedText.Length} karakter (max. {maxLength}).");
 
             var request = new DocumentSummaryRequest
             {
