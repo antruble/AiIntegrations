@@ -1,7 +1,6 @@
 ﻿@rendermode InteractiveServer
 
 <style>
-    /* A toolbar fix pozícióban, a képernyő alján középre */
     .action-toolbar-container {
         position: fixed;
         bottom: 20px;
@@ -9,10 +8,9 @@
         transform: translateX(-50%);
         width: auto;
         z-index: 1050;
-        pointer-events: none; /* csak a belső gombokra engedélyezzük a kattintást */
+        pointer-events: none;
     }
 
-    /* Maga a sáv: félig átlátszó fehér háttér, lekerekített */
     .action-toolbar {
         background-color: rgba(255, 255, 255, 0.9);
         border-radius: 2rem;
@@ -21,7 +19,6 @@
         backdrop-filter: blur(8px);
     }
 
-    /* Gombok: egységes méret, lekerekítés, finom hover */
     .action-btn {
         padding: 0.5rem 1.25rem;
         font-weight: 500;
@@ -33,7 +30,6 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
-    /* Raise sáv: keskeny, lágy színezés */
     .raise-container {
         display: flex;
         align-items: center;
@@ -112,7 +108,7 @@
             <div class="slider-wrapper position-relative">
                 <input id="raiseRange"
                        type="range"
-                       min="0"
+                       min="1"
                        max="@MaxRaise"
                        @bind="raiseAmount"
                        @bind:event="oninput"
@@ -130,9 +126,14 @@
             </button>
         </div>
         <button class="btn btn-warning action-btn rounded-pill ms-2"
-                @onclick="() => OnHint.InvokeAsync()">
-            Hint
+                @onclick="() => OnHint.InvokeAsync()"
+                disabled="@( !CanRequestHint )"
+                title="@( CanRequestHint
+                                    ? "Kérhetsz segítséget"
+                                    : "A preflop körben nem kérhetsz hintet" )">
+            @( CanRequestHint ? "Hint" : "Még nem elérhető" )
         </button>
+
     </div>
 </div>
 
@@ -153,4 +154,7 @@
 
     [Parameter, EditorRequired]
     public int MaxRaise { get; set; }
+
+    [Parameter, EditorRequired]
+    public bool CanRequestHint { get; set; }
 }

@@ -10,10 +10,10 @@ namespace Frontend.BlazorWebApp.StateServices
         {
             _logger = logger;
         }
-        // Az OnChange esemény értesíti a komponenseket a frissítésről.
         public event Action? OnChange;
 
-        // Tárolja az aktuális játék állapotát.
+        public bool IsFinished { get; set; } = false;
+
         private GameDto? _currentGame;
         private ICollection<WinnerDto>? _winners;
 
@@ -86,7 +86,6 @@ namespace Frontend.BlazorWebApp.StateServices
         }
         public void UpdateGame(GameDto newGame) => CurrentGame = newGame;
 
-        // Az esemény kiváltása, ha az állapot változik.
         private void NotifyStateChanged() => OnChange?.Invoke();
     }
 }

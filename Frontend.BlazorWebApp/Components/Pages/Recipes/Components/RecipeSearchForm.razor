@@ -1,23 +1,19 @@
 ﻿@using Microsoft.AspNetCore.Components.Forms
 
 <style>
-    /* A kártya lekerekítése és overflow kezelése */
     .recipe-card {
         border-radius: 0.75rem;
         overflow: hidden;
     }
 
-    /* Ugyanaz a gradiens, mint a page háttérének tetején */
     .header-gradient {
         background-image: linear-gradient(315deg, #2d3436 0%, #3B3B3B 74%);
     }
 
-    /* Form elemek finom lekerekítéssel */
     .search-form .form-control {
         border-radius: 0.5rem;
     }
 
-    /* Input-group gomb és input sarkai */
     .search-form .input-group .form-control {
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
@@ -28,7 +24,6 @@
         border-bottom-left-radius: 0;
     }
 
-    /* Listaelemek stílusa */
     .list-group-flush .list-group-item {
         border: none;
         border-bottom: 1px solid #e9ecef;
@@ -36,28 +31,23 @@
         padding-bottom: 0.75rem;
     }
 
-    /* Szűkített címek, uppercase, kontrasztos színek */
     .search-form .form-label {
         font-weight: 500;
         letter-spacing: 0.5px;
     }
 
-    /* Gomb hover effekt */
     .btn-outline-secondary:hover {
         background-color: #2d3436;
         color: #fff;
         border-color: #2d3436;
         transition: background-color 0.2s ease;
     }
-    /* A listát görgethetővé tesszük, ha túl magas */
     .ingredient-list {
-        max-height: 300px; /* igény szerint módosíthatod */
+        max-height: 300px;
         overflow-y: auto;
-        /* opcionális: kicsi belső padding, hogy ne tapadjon a szélhez */
         padding-right: 0.5rem;
     }
 
-        /* Ha szeretnél, a scrollbar stílusát is finomhangolhatod WebKit alatt */
         .ingredient-list::-webkit-scrollbar {
             width: 6px;
         }

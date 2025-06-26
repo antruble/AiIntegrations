@@ -13,44 +13,59 @@
 @inject ILogger<Poker> Logger
 @inject NavigationManager NavManager
 
-@if (isLoading) { <p class="text-center">Betöltés...</p> }
-else if (hasError) { <p class="text-center text-danger">Hiba történt a játék betöltése során.</p> }
-else if (_engine is null || GameState.CurrentGame is null) { <h1 class="text-center text-red">Nincs játék.</h1> }
-else if (GameState.CurrentGame.CurrentHand is null) { <h1 class="text-center text-red">Nincs hand.</h1> }
-else
+@if (GameState.IsFinished)
 {
-    @if (!string.IsNullOrEmpty(GameState.CurrentHint))
-    {
-        <div class="position-absolute top-0 start-0 w-100 d-flex justify-content-center">
-            <div class="alert alert-info mt-2 w-50">
-                <strong>Hint:</strong> @GameState.CurrentHint
-            </div>
+    <div class="finish-overlay d-flex flex-column justify-content-center align-items-center">
+        <div class="finish-card p-4 text-center shadow-lg rounded">
+            <h2 class="mb-3">Gratulálunk!</h2>
+            <p class="lead">Sikeresen megnyerted a játszmát!</p>
+            <button class="btn btn-primary mt-3" @onclick="() => NavigateBack()">
+                Vissza a főoldalra
+            </button>
         </div>
-    }
-
-
-    <div class="d-flex justify-content-center align-items-center flex-column relative" style="height: 100vh">
-        <PokerTable
-        CurrentGame="GameState.CurrentGame"
-        UserId="_engine.GetUserId()"
-        Winners="GameState.Winners"
-        GetSuitSymbol="GetSuitSymbol" />
-
-        @if (GameState.CurrentGame.CurrentGameAction == GameAction.PlayerAction
-           && _engine.GetUserId() == GameState.CurrentGame.CurrentHand.CurrentPlayerId)
-        {
-            <div class="w-100 mt-5 d-flex justify-content-center" style="position: absolute; bottom:0; left; 0;">
-                <ActionToolbar
-                MaxRaise="MaxRaise"
-                OnFold="() => Fold()"
-                OnCall="() => Call()"
-                OnRaise="amt => Raise(amt)" 
-                OnHint="() => HintAsync()"/>
-            </div>
-        }
     </div>
 }
+else
+{
+    @if (isLoading) { <p class="text-center">Betöltés...</p> }
+    else if (hasError) { <p class="text-center text-danger">Hiba történt a játék betöltése során.</p> }
+    else if (_engine is null || GameState.CurrentGame is null) { <h1 class="text-center text-red">Nincs játék.</h1> }
+    else if (GameState.CurrentGame.CurrentHand is null) { <h1 class="text-center text-red">Nincs hand.</h1> }
+    else
+    {
+        @if (!string.IsNullOrEmpty(GameState.CurrentHint))
+        {
+            <div class="position-absolute top-0 start-0 w-100 d-flex justify-content-center">
+                <div class="alert alert-info mt-2 w-50">
+                    <strong>Hint:</strong> @GameState.CurrentHint
+                </div>
+            </div>
+        }
 
+
+        <div class="d-flex justify-content-center align-items-center flex-column relative" style="height: 100vh">
+            <PokerTable
+            CurrentGame="GameState.CurrentGame"
+            UserId="_engine.GetUserId()"
+            Winners="GameState.Winners"
+            GetSuitSymbol="GetSuitSymbol" />
+
+            @if (GameState.CurrentGame.CurrentGameAction == GameAction.PlayerAction
+               && _engine.GetUserId() == GameState.CurrentGame.CurrentHand.CurrentPlayerId)
+            {
+                <div class="w-100 mt-5 d-flex justify-content-center" style="position: absolute; bottom:0; left; 0;">
+                    <ActionToolbar
+                    MaxRaise="MaxRaise"
+                    CanRequestHint="CanRequestHint"
+                    OnFold="() => Fold()"
+                    OnCall="() => Call()"
+                    OnRaise="amt => Raise(amt)" 
+                    OnHint="() => HintAsync()"/>
+                </div>
+            }
+        </div>
+    }
+}
 @code {
     [Parameter]
     public Guid gameId { get; set; }
@@ -63,6 +78,7 @@ else
                              .FirstOrDefault(p => p.Id == _engine?.GetUserId())?
                              .Chips ?? 0;
 
+    public bool CanRequestHint => GameState.CurrentGame?.CurrentHand?.HandStatus == HandStatus.Preflop ? false : true;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -95,7 +111,7 @@ else
                 throw new InvalidOperationException("Nem található a kért játék.");
             }
 
-            // Frissítjük a GameState-et, ha szükséges
+            // Frissítjük a GameState-et
             GameState.UpdateGame(game);
         }
         catch
@@ -109,7 +125,7 @@ else
     {
         if (_engine is null) return;
 
-        // Előző hint törlése (opcionális)
+        // Előző hint törlése
         GameState.ClearHint();
 
         await _engine.RequestHintAsync();
@@ -122,8 +138,7 @@ else
         {
             await LoadGame();
         }
-        _engine = new PokerGameEngine(GameState.CurrentGame, HttpFactory, engineLogger, StateHasChanged, GameState);
-        // await _engine.InitAsync(CancellationToken.None);
+        _engine = new PokerGameEngine(GameState.CurrentGame!, HttpFactory, engineLogger, StateHasChanged, GameState);
         _engine.Start();
         isLoading = false;
     }
@@ -147,9 +162,13 @@ else
         }
     }
 
+    public void NavigateBack()
+    {
+        NavManager.NavigateTo("/poker");
+    }
+
     public void Dispose()
     {
-        // komponens dispose: mindenről leiratkozunk
         NavManager.LocationChanged -= OnLocationChanged;
         GameState.OnChange -= RefreshUI;
     }

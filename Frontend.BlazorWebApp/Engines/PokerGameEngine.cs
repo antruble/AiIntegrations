@@ -14,15 +14,12 @@ namespace Frontend.BlazorWebApp.Engines
         private readonly SemaphoreSlim _semaphore = new(1, 1);
         private bool _isDisposed = false;
 
-        // Game-hez szükséges adattagok
         private GameDto _game { get; set; }
         private Guid UserId { get; set; }
 
 
-        //private Guid CurrentPlayerId { get; set; }
         private TaskCompletionSource<PlayerActionDto>? _playerActionTcs;
 
-        //private readonly HttpClient _http;
         private readonly ILogger<PokerGameEngine> _logger;
         private readonly Action _stateHasChangedCallback;
         private bool _isLoading = true;
@@ -54,6 +51,7 @@ namespace Frontend.BlazorWebApp.Engines
 
             _logger.LogInformation($"Engine elindítva..");
             _gameLoopCts = new CancellationTokenSource();
+            _gameStateService.IsFinished = false;
             UserId = GetUserId();
 
             _ = GameLoopAsync(_gameLoopCts.Token);
@@ -101,13 +99,11 @@ namespace Frontend.BlazorWebApp.Engines
                 }
                 catch (OperationCanceledException)
                 {
-                    // Normális leállás (CancellationToken)
                     _logger.LogInformation("A játékloop megszakítva!");
                     break;
                 }
                 catch (Exception ex)
                 {
-                    // Egyéb kivételek kezelése
                     _logger.LogError($"Kivétel történt a _game loop-ban: {ex.Message}");
                 }
                 finally
@@ -157,7 +153,7 @@ namespace Frontend.BlazorWebApp.Engines
                 throw new InvalidOperationException("Hiba az UpdateGameStateAsync metódusban: a _game.CurrentHand null!");
             var http = _httpClientFactory.CreateClient("PokerClient");
 
-            if (!_isLoading)
+            if (!_isLoading && !_gameStateService.IsFinished)
             {
                 switch (_game.CurrentGameAction)
                 {
@@ -188,7 +184,15 @@ namespace Frontend.BlazorWebApp.Engines
                         _gameStateService.SetWinners(winners);
                         _logger.LogInformation($"Vége a handnek, a nyertesek: {string.Join(", ", winners!.Select(p => p.Player.Name))}");
                         await Task.Delay((int)(1 * 4000), token);
-                        await http.PostAsync($"startnewhand?gameId={_game.Id}", null, token);
+
+                        if (_game.Players.Count(p => p.Chips > 0 && p.IsBot) == 0)
+                        {
+                            _logger.LogInformation($"Vége a játéknak, mert már csak 1 játékos van waiting státuszban.");
+                            _gameStateService.IsLocked = false;
+                            _gameStateService.IsFinished = true;
+                        }
+                        else
+                            await http.PostAsync($"startnewhand?gameId={_game.Id}", null, token);
                         break;
                     default:
                         break;
@@ -247,13 +251,6 @@ namespace Frontend.BlazorWebApp.Engines
                 _logger.LogInformation($"PlayerAction: mivel a soron következő játékos bot, ezért várunk 2mp-t..");
                 await Task.Delay((int)(SPEED * 2000), token);
             }
-            //currentPlayer.ActionsHistory.Add(
-            //     new PlayerActionDto(
-            //         PlayerActionType.Raise,
-            //         100,
-            //         DateTime.Now
-            //     )
-            // );
 
             if (currentPlayer.IsBot)
                 await HandleBotActionsAsync(currentPlayer, token);
@@ -277,10 +274,8 @@ namespace Frontend.BlazorWebApp.Engines
                     _playerActionTcs = new TaskCompletionSource<PlayerActionDto>();
 
                 _logger.LogWarning("1.2 Várakozás elkezdve...");
-                // simple 30 másodperces timeout task
                 var timeoutTask = Task.Delay(TimeSpan.FromSeconds(300), token);
 
-                // Várunk arra, hogy vagy a játékos akciója, vagy a timeout task befejeződjön
                 var completedTask = await Task.WhenAny(_playerActionTcs.Task, timeoutTask);
 
                 if (completedTask == timeoutTask)
@@ -355,7 +350,6 @@ namespace Frontend.BlazorWebApp.Engines
             var hintResp = await client.GetFromJsonAsync<HintResponse>(url)
                 ?? throw new InvalidOperationException("HintResponse deserializálása sikertelen.");
 
-            // 6) Állapot frissítése, UI értesítése
             _gameStateService.SetHint(hintResp.Advice);
         }
 
@@ -380,7 +374,6 @@ namespace Frontend.BlazorWebApp.Engines
         {
             if (_game.Players == null || !_game.Players.Any())
             {
-                // sínkron blokkolással hívjuk le (ugyanitt async verzió is elképzelhető)
                 var client = _httpClientFactory.CreateClient("PokerClient");
                 var game = client
                     .GetFromJsonAsync<GameDto>($"getgamebyid/{_game.Id}")
@@ -388,8 +381,6 @@ namespace Frontend.BlazorWebApp.Engines
 
                 if (game == null || game.Players == null || !game.Players.Any())
                     throw new InvalidOperationException($"Nem található játék vagy játékosok a szerveren. gameId={_game.Id}");
-
-                //_game.Players = game.Players;
             }
 
             var user = _game.Players.FirstOrDefault(p => !p.IsBot)

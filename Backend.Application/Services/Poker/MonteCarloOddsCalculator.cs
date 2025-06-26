@@ -23,17 +23,15 @@ namespace Backend.Application.Services.Poker
             IList<Card> communityCards,
             int iterations = 10_000)
         {
-            // Inicializáljuk a számlálókat
             var wins = holeCards.Keys.ToDictionary(id => id, id => 0.0);
 
-            // Mindig ugyanazzal a seed-del is kísérletezhetsz, ha reprodukálhatóságot akarsz
             for (int i = 0; i < iterations; i++)
             {
                 // 1) Deck a még nem kiosztott kártyákkal
                 var drawn = holeCards.SelectMany(kv => kv.Value).Concat(communityCards).ToList();
                 var deck = new Deck(drawn);
 
-                // 2) Pótlás véletlenszerűen, amíg 5 közös lap nincs
+                // 2) Pótlás véletlenszerűen, amíg nem 5 community card van
                 var simCommunity = new List<Card>(communityCards);
                 while (simCommunity.Count < 5)
                     simCommunity.Add(deck.Draw());

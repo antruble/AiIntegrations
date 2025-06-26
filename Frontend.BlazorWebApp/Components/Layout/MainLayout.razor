@@ -9,44 +9,44 @@
         background-color: #ffffff;
         color: #000000;
         text-align: center;
-        width: 8rem; /* 48 * 0.25rem */
-        height: 2rem; /* 14 * 0.25rem */
+        width: 8rem; 
+        height: 2rem; 
         position: relative;
-        font-size: 1rem; /* text-xl */
-        font-weight: 600; /* font-semibold */
+        font-size: 1rem;
+        font-weight: 600;
         border: none;
-        border-radius: 1.5rem; /* rounded-2xl */
+        border-radius: 1.5rem; 
         cursor: pointer;
         overflow: hidden;
-        padding: 0; /* nincs extra padding */
+        padding: 0;
         text-decoration: none;
     }
 
-    /* Az ikon tartó div */
+
     .btn-go-back-icon {
-        background-color: #68D391; /* Tailwind green-400 */
-        border-radius: 0.75rem; /* rounded-xl */
-        height: 1.5rem; /* h-12 */
-        width: 25%; /* w-1/4 */
+        background-color: #68D391;
+        border-radius: 0.75rem; 
+        height: 1.5rem; 
+        width: 25%; 
         display: flex;
         align-items: center;
         justify-content: center;
         position: absolute;
-        left: 0.25rem; /* left-1 */
-        top: 4px; /* top-[4px] */
+        left: 0.25rem;
+        top: 4px; 
         z-index: 10;
         transition: width 0.5s ease;
     }
 
-    /* Hover-kor szétnyílik az ikonos sáv */
+
     .btn-go-back:hover .btn-go-back-icon {
-        width: 120px; /* group-hover:w-[184px] */
+        width: 120px;
     }
 
-    /* A gomb szövege */
+
     .btn-go-back-text {
         display: inline-block;
-        transform: translateX(0.5rem); /* translate-x-2 */
+        transform: translateX(0.5rem);
         vertical-align: middle;
     }
 

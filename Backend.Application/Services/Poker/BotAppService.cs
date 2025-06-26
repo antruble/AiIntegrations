@@ -32,7 +32,7 @@ namespace Backend.Application.Services.Poker
                 Timestamp = DateTime.UtcNow
             };
 
-            if (amount > 0)
+            if (amount > 0) // ha van call érték, akkor call az action
                 chance = 0.0;
 
             if (chance < 0.70)
@@ -52,7 +52,7 @@ namespace Backend.Application.Services.Poker
             }
             else
             {
-                // 5% esetben all-in Raise (az összes chip)
+                // 5% esetben all-in 
                 action.ActionType = PlayerActionType.Raise;
                 action.Amount = bot.Chips;
             }

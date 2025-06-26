@@ -20,7 +20,6 @@ namespace Backend.Application.Services.Poker
         private readonly IPokerHandEvaluator _handEvaluator;
         private readonly IOddsCalculator _oddsCalculator;
         private readonly ILogger<GameAppService> _logger;
-        //private readonly IDomainEventPublisherService _eventPublisherService;
 
         private const string DeckMemoryCacheKey = "DECK-CACHE-KEY-";
         private readonly IMemoryCache _cache;
@@ -33,7 +32,6 @@ namespace Backend.Application.Services.Poker
             ILogger<GameAppService> logger,
 
             IMemoryCache cache
-            //IDomainEventPublisherService eventPublisherService
             )
         {
             _unitOfWork = unitOfWork;
@@ -43,7 +41,6 @@ namespace Backend.Application.Services.Poker
             _logger = logger;
 
             _cache = cache;
-            //_eventPublisherService = eventPublisherService;
         }
 
         public async Task<Game> GetGameAsync()
@@ -121,7 +118,6 @@ namespace Backend.Application.Services.Poker
                 _logger.LogInformation($"Átváltva a következő játékosra (ha nem hand vége volt)");
             }
 
-            // Mentjük a változtatásokat
             await _unitOfWork.SaveChangesAsync();
             return game;
         }
@@ -147,11 +143,9 @@ namespace Backend.Application.Services.Poker
                 if (!game.CurrentHand.SkipActions)
                 {
                     _logger.LogInformation($"A következő játékos a pivot játékos, de még nincs river, ezért a körnek vége");
-                    // 1) Hole és community kártyák kigyűjtése
                     var hole = game.Players.ToDictionary(p => p.Id, p => (IList<Card>)p.HoleCards);
                     var community = game.CurrentHand.CommunityCards;
 
-                    // 2) Odds számolása és mentése
                     var odds = _oddsCalculator.CalculateWinProbabilities(hole, community);
                     game.CurrentHand.Odds = odds;
 
@@ -163,8 +157,6 @@ namespace Backend.Application.Services.Poker
                         .ForEach(p => p.HasToRevealCards = true);
 
                     game.CurrentGameAction = GameActions.DealingCards;
-                    //game = await DealNextRound(game);
-
 
                     var playerId = game.SetRoundsFirstPlayerToCurrent();
                     game.SetCurrentPlayerToPivot(playerId);
@@ -247,9 +239,13 @@ namespace Backend.Application.Services.Poker
             var game = await _unitOfWork.Games.GetByIdAsync(gameId)
                         ?? throw new NullReferenceException($"Nem található game a megadott game ID-val. Game ID: {gameId}");
 
+            var activePlayersCount = game.Players
+                .Where(p => p.PlayerStatus != PlayerStatus.Lost).Count();
+            if (activePlayersCount < 2)
+                throw new Exception("Nem lehet új handet indítani, mert kevesebb mint 2 aktív játékos van.");
+
             var hand = game.StartNewHand();
 
-            // Új hand-et a kártyák kiosztásával kezdjük
             game.CurrentGameAction = GameActions.DealingCards;
 
             await _unitOfWork.Hands.AddAsync(hand);
@@ -259,13 +255,11 @@ namespace Backend.Application.Services.Poker
         {
             var winners = await _unitOfWork.Winners.GetAllAsync(filter: w => w.HandId == handId);
 
-            // Iterálunk a Winner objektumokon, és feltöltjük a Player property-t
             foreach (var winner in winners)
             {
                 if (winner is null)
                     continue;
 
-                // Feltételezzük, hogy a _unitOfWork.Players.GetByIdAsync(winner.PlayerId) visszaadja a teljes Player objektumot
                 winner.Player = await _unitOfWork.Players.GetByIdAsync(winner.PlayerId)
                                     ?? throw new NullReferenceException($"Nem találtam a playert");
             }
@@ -336,6 +330,10 @@ namespace Backend.Application.Services.Poker
             => game.CurrentHand!.Pot.GetCallAmountForPlayer(player.Id);
         private void HandleRaiseAction(Game game, Player player, int amount)
         {
+            var callAmount = game.CurrentHand!.Pot.GetCallAmountForPlayer(player.Id);
+            if (callAmount > amount)
+                amount = callAmount + 1;
+
             game.DeductPlayerChips(player, amount);
             game.SetCurrentPlayerToPivot(player.Id);
         }

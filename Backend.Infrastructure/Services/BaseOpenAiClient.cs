@@ -34,7 +34,7 @@ namespace Backend.Infrastructure.Services
                 new UserChatMessage(GetUserPrompt(request))
             };
 
-            var result = await _client.CompleteChatAsync(messages, new ChatCompletionOptions { Temperature = 0.5f });
+            var result = await _client.CompleteChatAsync(messages, new ChatCompletionOptions { Temperature = 0.2f, TopP = 0.8f });
             return ParseResponse(result.Value.Content[0].Text);
         }
 

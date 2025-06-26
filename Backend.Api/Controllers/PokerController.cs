@@ -198,17 +198,14 @@ namespace Backend.Api.Controllers
         [HttpGet("gethint")]
         public async Task<IActionResult> GetHint([FromQuery] Guid gameId, [FromQuery] Guid playerId, [FromQuery] double odds)
         {
-            // 1) Lekérjük a játékot a service-ből
             var game = await _gameService.GetGameByIdAsync(gameId);
             if (game == null)
                 return NotFound($"Nincs ilyen game: {gameId}");
 
-            // 2) Megkeressük a kérő játékost
             var player = await _playerService.GetPlayerByIdAsync(playerId);
             if (player == null)
                 return BadRequest($"A playerId ({playerId}) nem egyezik a játékosok egyikével sem.");
 
-            // 3) Domain ValueObject → DTO mapping
             var communityDtos = game.CurrentHand?.CommunityCards
                 .Select(c => new CardDto(
                      Rank: (RankDto)c.Rank,
@@ -230,7 +227,6 @@ namespace Backend.Api.Controllers
 
             var callAmount = _gameService.GetCallAmountForPlayer(game, player);
 
-            // 3) Összeállítjuk a HintRequest-et
             var hintReq = new HintRequest(
                 GameId: game.Id,
                 PlayerId: playerId,
@@ -241,7 +237,6 @@ namespace Backend.Api.Controllers
                 CallAmount: callAmount
             );
 
-            // 4) Meghívjuk a hint use-case-et
             var hintResp = await _hintService.GetHintAsync(hintReq);
 
             return Ok(hintResp);

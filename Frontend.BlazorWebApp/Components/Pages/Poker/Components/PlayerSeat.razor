@@ -8,13 +8,11 @@
     ">
     
 
-    @* Pivot dealer jelzés *@
     @if (Player.Id == PivotPlayerId)
     {
         <div class="pivot-badge">D</div>
     }
 
-    @* Vakokat itt, kívül lebegve jelöljük *@
     @if (Player.BlindStatus != BlindStatus.None)
     {
         <div class="blind-badge @(Player.BlindStatus == BlindStatus.SmallBlind ? "small-blind" : "big-blind")">
@@ -22,7 +20,6 @@
         </div>
     }
 
-    @* Játékos neve és zsetonjai *@
     <div class="player-name mb-4 text-white">@Player.Name</div>
     <div class="chip-stack">@Player.Chips</div>
 
